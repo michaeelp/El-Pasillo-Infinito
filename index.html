@@ -1,7 +1,6 @@
 <!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>El Pasillo Infinito</title>
 <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/ml5@0.12.2/dist/ml5.min.js"></script>
 <style>
 *{box-sizing:border-box;user-select:none}
 body{margin:0;background:#000;color:#c9b8a8;font:18px 'Special Elite',Georgia,serif;overflow:hidden}
@@ -68,6 +67,14 @@ input{font:inherit;background:#100;color:#e8d8c8;border:2px solid #600;padding:8
 <div id="bk" class="pane on"><div id="bkw"><div id="book"><div class="pg l"><canvas id="bf" width="300" height="300"></canvas><h3 id="bn"></h3></div><div class="pg r" id="pr"></div></div><div id="nav"><button id="pv" style="min-width:0">◀</button><div id="tb"></div><button id="nx" style="min-width:0">▶</button></div></div></div>
 <div id="dr" class="pane"><div id="tl"><div id="cl"></div><button data-t="p" title="Pincel">✏️</button><button data-t="e" title="Goma">🧽</button><button data-t="f" title="Cubo">🪣</button><input type="range" id="sz" min="2" max="40" value="18" title="Tamaño"><button id="bu" title="Deshacer">↶</button><button id="bc" title="Borrar todo">🗑</button><button id="bm">¡MOSTRAR!</button></div><canvas id="dc" width="360" height="360"></canvas></div></div>
 
+<script type="module">
+import{pipeline,env}from'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+env.allowLocalModels=false;window.IA={ready:0};
+const ia=document.getElementById('ia');ia.textContent='La IA está despertando… (descarga única)';
+try{const clf=await pipeline('zero-shot-image-classification','Xenova/clip-vit-base-patch32',{progress_callback:p=>{if(p.status=='progress')ia.textContent=`La IA está despertando… ${Math.round(p.progress)}% (descarga única)`}});
+IA.run=async(cv,labels)=>{const u=await new Promise(r=>cv.toBlob(b=>r(URL.createObjectURL(b))));const o=await clf(u,labels,{hypothesis_template:'a rough hand-drawn doodle of a {}.'});URL.revokeObjectURL(u);return o};
+IA.ready=1;ia.textContent='La IA está lista. Te observa. (v4)'}catch(e){console.error(e);ia.textContent='La IA no pudo despertar (¿sin conexión?)'}
+</script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 const $=i=>document.getElementById(i);
@@ -140,8 +147,6 @@ $('bo').onclick=()=>{ac();sfx.click();$('om').value=mv;$('os').value=sv;show('op
 $('om').oninput=e=>{mv=+e.target.value;if(mg)mg.gain.value=mv*.5;sav()};$('os').oninput=e=>{sv=+e.target.value;if(sg)sg.gain.value=sv;sav();sfx.click()};
 $('bz').onclick=()=>{localStorage.removeItem('pi_s');sfx.click()};document.querySelectorAll('.bk').forEach(b=>b.onclick=()=>{ac();sfx.click();menu()});
 // IA
-let cls,ok=0;function ia(){$('ia').textContent='La IA está despertando…';try{cls=ml5.imageClassifier('DoodleNet',()=>{ok=1;$('ia').textContent='La IA está lista. Te observa. (v3)'})}catch(e){$('ia').textContent='La IA no pudo despertar (¿sin conexión?)'}}
-setTimeout(()=>{if(!ok&&!$('ia').textContent.includes('no pudo'))$('ia').textContent='La IA tarda en despertar… (necesita conexión)'},6000);addEventListener('load',ia);
 const dc=$('dc'),dx=dc.getContext('2d',{willReadFrequently:true}),sk=document.createElement('canvas');sk.width=sk.height=360;const sx=sk.getContext('2d',{willReadFrequently:true});
 let tool='p',col='#111111',sz=18,hist=[],lp;
 const clr=()=>{[dx,sx].map(k=>{k.fillStyle='#fff';k.fillRect(0,0,360,360)});hist=[]};clr();
@@ -170,11 +175,11 @@ function over(){const s=gs();show('over');$('ot').textContent=out;$('os2').textC
 $('bs').onclick=()=>{const n=($('ni').value.trim()||'Anónimo').slice(0,14);localStorage.pi_n=n;if(window.FB&&N>1)FB.add(n,N-1).catch(()=>{});const s=gs();s.push({n,p:N-1});s.sort((a,b)=>b.p-a.p);localStorage.pi_s=JSON.stringify(s.slice(0,10));sfx.click();menu()};
 $('bre').onclick=()=>{sfx.click();start()};
 function look(){const k=sx.getImageData(0,0,360,360).data;let n=0;for(let i=0;i<k.length;i+=4)if(k[i]<128)n++;return n}
-function prep(){const k=sx.getImageData(0,0,360,360).data;let x0=360,y0=360,x1=0,y1=0,n=0;for(let y=0;y<360;y++)for(let x=0;x<360;x++)if(k[(y*360+x)*4]<128){n++;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}if(n<150)return null;const w=x1-x0+1,h=y1-y0+1,s=Math.min(216/w,216/h,2.5),o=document.createElement('canvas');o.width=o.height=256;const g=o.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,256,256);g.drawImage(sk,x0,y0,w,h,128-w*s/2,128-h*s/2,w*s,h*s);return o}
-function recog(){const o=prep();if(!o||!cls||!ok)return Promise.resolve(null);const tk=n=>cls.classify(o,n);return Promise.race([tk(345).catch(()=>tk(300)).catch(()=>tk(100)).catch(()=>tk(10)),new Promise(r=>setTimeout(()=>r(null),8000))]).catch(()=>null)}
+function prep(){const k=sx.getImageData(0,0,360,360).data;let x0=360,y0=360,x1=0,y1=0,n=0;for(let y=0;y<360;y++)for(let x=0;x<360;x++)if(k[(y*360+x)*4]<128){n++;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}if(n<150)return null;const w=x1-x0+1,h=y1-y0+1,s=Math.min(216/w,216/h,2.5),o=document.createElement('canvas');o.width=o.height=256;const g=o.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,256,256);g.drawImage(dc,x0,y0,w,h,128-w*s/2,128-h*s/2,w*s,h*s);return o}
+function recog(){const o=prep();if(!o||!window.IA||!IA.ready)return Promise.resolve(null);return Promise.race([IA.run(o,[...AL]),new Promise(r=>setTimeout(()=>r(null),25000))]).catch(e=>(console.error(e),null))}
 $('bm').onclick=()=>{if(st!='book')return;st='susp';t0=performance.now();res=undefined;$('ui').classList.remove('on');$('msg').textContent='Le muestras tu dibujo…';recog().then(r=>res=r)};
 const AL=new Set(M.flatMap(m=>m[5]));
-function verdict(){console.log('IA v3:',res&&res.slice(0,5));const L=(res||[]).map(x=>({l:x.label.toLowerCase().replace(/_/g,' '),p:x.confidence})).filter(x=>AL.has(x.l)).sort((a,b)=>b.p-a.p),top=L[0],sum=L.reduce((a,x)=>a+x.p,0)||1,txt=top?`La IA reconoció: ${tr(top.l)} (${Math.round(top.p/sum*100)}%)`:'La IA no logró reconocer nada en tu dibujo.';
+function verdict(){console.log('IA v4:',res&&res.slice(0,5));const L=(res||[]).map(x=>({l:x.label.toLowerCase().replace(/_/g,' '),p:x.score})).filter(x=>AL.has(x.l)).sort((a,b)=>b.p-a.p),top=L[0],sum=L.reduce((a,x)=>a+x.p,0)||1,txt=top?`La IA reconoció: ${tr(top.l)} (${Math.round(top.p/sum*100)}%)`:'La IA no logró reconocer nada en tu dibujo.';
 if(top&&cur[5].includes(top.l)){st='win';t0=performance.now();sfx.flee();$('msg').textContent=`${txt} — ¡${cur[0]} huye aterrado!`}else end(`${txt}. ${cur[0]} no le temía a eso.`)}
 let lt=0;function loop(now){requestAnimationFrame(loop);const t=(now-t0)/1000,d=now/1900,cy=H*.46,S=Math.min(W,H);
 if(st=='menu'||st=='over'){cor(.1+(Math.random()<.05?.4:0),d/3)}
