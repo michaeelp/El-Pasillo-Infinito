@@ -1,5 +1,5 @@
 // CONFIGURACIÓN FIREBASE: pega aquí la configuración pública de tu aplicación web.
-export const firebaseConfig = {
+export const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA9O_zUIjbZ_imUlvQkabXtnFZgVJSHn_U",
   authDomain: "el-pasillo-infinito.firebaseapp.com",
   databaseURL: "https://el-pasillo-infinito-default-rtdb.firebaseio.com",
