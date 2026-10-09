@@ -1,4 +1,4 @@
-import { TIEMPO_FASE, TIEMPO_ALERTA, VERSION, ASSET_TIMEOUT_MS } from './config.js?v=1.3.0';
+import { TIEMPO_FASE, TIEMPO_ALERTA, VERSION, ASSET_TIMEOUT_MS } from './config.js?v=1.3.1';
 export class Atmosphere {
   constructor(options){this.options=options;this.ctx=null;this.beatAt=0;this.ambientAt=0;this.stepAt=0;this.cues=new Map();}
   async start(){

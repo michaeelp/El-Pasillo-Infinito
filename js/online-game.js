@@ -1,19 +1,19 @@
-import { GAME, ONLINE, roundDurations } from './config.js?v=1.3.0';
-import { roundPhase, monsterSequence } from './race.js?v=1.3.0';
-import { rotateRoles, roleUid } from './coop.js?v=1.3.0';
-import { roleView } from './roles.js?v=1.3.0';
-import { precisionFor, raceBoard, standings } from './scoring.js?v=1.3.0';
-import { playerNode } from './profile.js?v=1.3.0';
-import { createChat, messages } from './lobby.js?v=1.3.0';
-import { setPortrait } from './monsters.js?v=1.3.0';
-import { publishRecord } from './records.js?v=1.3.0';
-import { awardMatch } from './xp.js?v=1.3.0';
-import { difficulty,winningResult } from './difficulty.js?v=1.3.0';
-import { background } from './background.js?v=1.3.0';
-import { shortError } from './net.js?v=1.3.0';
-import { $, toast } from './ui.js?v=1.3.0';
-import { judge, topResult } from './ai.js?v=1.3.0';
-import { showDebug } from './debug.js?v=1.3.0';
+import { GAME, ONLINE, roundDurations } from './config.js?v=1.3.1';
+import { roundPhase, monsterSequence } from './race.js?v=1.3.1';
+import { rotateRoles, roleUid } from './coop.js?v=1.3.1';
+import { roleView } from './roles.js?v=1.3.1';
+import { precisionFor, raceBoard, standings } from './scoring.js?v=1.3.1';
+import { playerNode } from './profile.js?v=1.3.1';
+import { createChat, messages } from './lobby.js?v=1.3.1';
+import { setPortrait } from './monsters.js?v=1.3.1';
+import { publishRecord } from './records.js?v=1.3.1';
+import { awardMatch } from './xp.js?v=1.3.1';
+import { difficulty,winningResult } from './difficulty.js?v=1.3.1';
+import { background } from './background.js?v=1.3.1';
+import { shortError } from './net.js?v=1.3.1';
+import { $, toast } from './ui.js?v=1.3.1';
+import { judge, topResult } from './ai.js?v=1.3.1';
+import { showDebug } from './debug.js?v=1.3.1';
 const validImage = value => typeof value==='string' && value.length<=ONLINE.maxThumbnail && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(value);
 export class OnlineSession {
   constructor(deps) {

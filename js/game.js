@@ -1,25 +1,25 @@
-import {GAME,TIEMPO_ALERTA,roundDurations} from './config.js?v=1.3.0';
-import {loadMonsters,labelsFrom,setPortrait,preload} from './monsters.js?v=1.3.0';
-import {Drawing} from './draw.js?v=1.3.0';
-import {setupTools} from './draw/tools.js?v=1.3.0';
-import {Book} from './book.js?v=1.3.0';
-import {Atmosphere} from './audio.js?v=1.3.0';
-import {Recognizer,topResult} from './ai.js?v=1.3.0';
-import {showDebug} from './debug.js?v=1.3.0';
-import {getOptions,saveOptions,addResult,canPersist} from './storage.js?v=1.3.0';
-import {publishRecord} from './records.js?v=1.3.0';
-import {$,screen,setupUI,applyOptions,refreshBest,refreshWorld,toast} from './ui.js?v=1.3.0';
-import {background} from './background.js?v=1.3.0';
-import {loadFonts} from './fonts.js?v=1.3.0';
-import {loadProfile,refreshProfile,getProfile,playerNode,setupProfile} from './profile.js?v=1.3.0';
-import {initAuth,currentUser,onSession,onBeforeSignOut,signIn,createAccount,completeAccount,playAsGuest,signOut,resetPassword,authError} from './auth.js?v=1.3.0';
-import {startFriends,stopFriends,rememberFriendLink,completeFriendLink,renderFriends,sendRequest,requestsEnabled,dismissInvitation,socialNow} from './friends.js?v=1.3.0';
-import {awardMatch} from './xp.js?v=1.3.0';
-import {difficulty,countdownMs,winningResult,populateDifficulties} from './difficulty.js?v=1.3.0';
-import {MonsterPool,seedNumber} from './pool.js?v=1.3.0';
-import {Lobby} from './lobby.js?v=1.3.0';
-import {OnlineSession} from './online-game.js?v=1.3.0';
-import {networkError} from './net.js?v=1.3.0';
+import {GAME,TIEMPO_ALERTA,roundDurations} from './config.js?v=1.3.1';
+import {loadMonsters,labelsFrom,setPortrait,preload} from './monsters.js?v=1.3.1';
+import {Drawing} from './draw.js?v=1.3.1';
+import {setupTools} from './draw/tools.js?v=1.3.1';
+import {Book} from './book.js?v=1.3.1';
+import {Atmosphere} from './audio.js?v=1.3.1';
+import {Recognizer,topResult} from './ai.js?v=1.3.1';
+import {showDebug} from './debug.js?v=1.3.1';
+import {getOptions,saveOptions,addResult,canPersist} from './storage.js?v=1.3.1';
+import {publishRecord} from './records.js?v=1.3.1';
+import {$,screen,setupUI,applyOptions,refreshBest,refreshWorld,toast} from './ui.js?v=1.3.1';
+import {background} from './background.js?v=1.3.1';
+import {loadFonts} from './fonts.js?v=1.3.1';
+import {loadProfile,refreshProfile,getProfile,playerNode,setupProfile} from './profile.js?v=1.3.1';
+import {initAuth,currentUser,onSession,onBeforeSignOut,signIn,createAccount,completeAccount,playAsGuest,signOut,resetPassword,authError,resumeDeletion} from './auth.js?v=1.3.1';
+import {startFriends,stopFriends,rememberFriendLink,completeFriendLink,renderFriends,sendRequest,requestsEnabled,dismissInvitation,socialNow} from './friends.js?v=1.3.1';
+import {awardMatch} from './xp.js?v=1.3.1';
+import {difficulty,countdownMs,winningResult,populateDifficulties} from './difficulty.js?v=1.3.1';
+import {MonsterPool,seedNumber} from './pool.js?v=1.3.1';
+import {Lobby} from './lobby.js?v=1.3.1';
+import {OnlineSession} from './online-game.js?v=1.3.1';
+import {networkError} from './net.js?v=1.3.1';
 const audio=new Atmosphere(getOptions()),debug=new URLSearchParams(location.search).get('debug')==='1';
 let lobby,online,roundTimes=roundDurations(1),roundNumber=1,countMs=3000,settings={dificultad:'normal',semilla:0,personalizada:false},pool,match;
 let state='warning',monsters=[],labels=[],book,current,score=0,startedAt=0,deadline=0,paused=false,pausedAt=0,lastCount=0,tab='book',runToken=0,analysis,analysisError='',submittedBlob,lastReason='',assetsReady=false,authBusy=false,accepted=false,authMode='login',prepMode='solo',submittedMs=0,soloSaving=false,invites=[],inviteTimer,levelTimer;
@@ -48,7 +48,7 @@ $('complete-account-form').onsubmit=async e=>{e.preventDefault();if(authBusy)ret
 $('auth-reset').onclick=async()=>{try{await resetPassword($('auth-email').value);$('auth-status').textContent='Revisa tu correo.';}catch(e){$('auth-status').textContent=authError(e);}};
 $('auth-guest').onclick=async()=>{authBusy=true;try{await playAsGuest();await refreshProfile();await stopFriends();menu();}finally{authBusy=false;}};
 $('account-open').onclick=showAccess;
-async function afterLogin(){const p=await refreshProfile(identity);if(!p){showAccess();$('auth-form').hidden=true;$('complete-account-form').hidden=false;$('auth-reset').hidden=true;$('auth-status').textContent='Elige tu nombre de usuario.';return;}
+async function afterLogin(){await resumeDeletion();const p=await refreshProfile(identity);if(!p){showAccess();$('auth-form').hidden=true;$('complete-account-form').hidden=false;$('auth-reset').hidden=true;$('auth-status').textContent='Elige tu nombre de usuario.';return;}
   await startFriends(()=>{if(state==='friends')renderFriends($('friends-list'),openOtherProfile);if(lobby.net.code&&lobby.net.data.meta?.estado==='lobby')lobby.render({...lobby.net.data,uid:lobby.net.uid,code:lobby.net.code,connected:lobby.net.connected});},receiveInvitation);
   const message=await completeFriendLink();if(message)toast(message);menu();let code=new URL(location.href).searchParams.get('sala');try{code ||= sessionStorage.getItem('pasillo-room');}catch{}if(code&&assetsReady){state='lobby';await lobby.open('race',code);}}
 let previousUid='';onSession(user=>{const uid=user?.uid||'';if(previousUid&&uid!==previousUid&&accepted&&!authBusy){online.stop();lobby.net.leave();stopFriends();refreshProfile().then(identity);showAccess();}previousUid=uid;});

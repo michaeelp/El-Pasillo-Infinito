@@ -1,3 +1,7 @@
 node_modules/
 .firebase/
 *.log
+*service-account*.json
+*serviceAccount*.json
+*adminsdk*.json
+*.pem

@@ -1,45 +1,48 @@
-# Reglas y datos 1.3.0
+# Reglas y datos de Spark 1.3.1
 
-`firestore.rules` y `database.rules.json` son los archivos completos que despliega `firebase.json`. `database.rules.commented.jsonc` contiene el mismo JSON con comentarios de cada rama. Se generan con `npm run generate:rules`; `npm test` detecta límites o configuraciones desactualizados. No pegar un fragmento encima de reglas anteriores: sustituir el archivo completo.
+`database.rules.json` contiene **todas** las reglas e índices de la base activa. `database.rules.commented.jsonc` tiene el mismo contenido con comentarios. Se regeneran con `npm run generate:rules` desde `tools/update_rules.mjs` y `tools/account_rules.mjs`. El SDK usa Auth modular v10 y RTDB; no llama a Firestore ni a Functions.
 
-## Firestore
+## Identidad y progreso
 
-- `account()` requiere Authentication no anónima. Perfil y búsqueda de nombres/códigos requieren cuenta; los registros admiten lectura pública, aunque la interfaz de invitado muestra solo su lista local.
-- `usernames` y `friendcodes` permiten crear solo con el perfil correspondiente en el mismo commit (`getAfter`); no permiten editar ni borrar. `users` exige ambas reservas, forma exacta, avatar 1–12, nivel 1, XP 0 y fecha de servidor al crear.
-- Nombre, minúsculas, código y fecha permanecen fijos. Avatar/preferencias se editan por el dueño. La curva de nivel se comprueba con umbrales generados desde la configuración.
-- XP y nivel no disminuyen. Cada aumento de XP/estadísticas debe incluir un recibo nuevo de partida con la diferencia exacta de XP (0–600), un incremento de una partida y fecha de servidor. Los recibos no se actualizan ni se borran. Se deduplican reintentos.
-- `users/{uid}/amigos`: solo lectura propia. Las callables, con Admin, comprueban acciones, amistad mutua, recepción de solicitudes, límites 100/50 y ventana móvil de diez solicitudes/hora; una transacción escribe ambos extremos. Los documentos de tasa y mutex son privados.
-- Los ocho registros individuales por modo/dificultad tienen siete campos exactos. Documento y campo UID pertenecen al usuario autenticado. Nombre/avatar/nivel coinciden con su perfil al guardar; fecha de servidor, puntuación entera 1–10000 Solo o 1–50000 Carrera. No puede bajar si `REEMPLAZAR_SOLO_SI_MEJOR` está activo.
-- Los cuatro registros cooperativos son Admin exclusivos. `publishCoopRecord` deriva los tres UID de una sala terminada, comprueba al solicitante y la dificultad, elige el menor UID como dueño y calcula SHA-256 sobre UIDs ordenados unidos por `|`. Añade `miembros` para filtrado y borrado. Guarda solo una vez por equipo/categoría y conserva el mayor con la configuración por defecto.
-- No se permite borrar desde el cliente. `deleteAccount` reautentica, marca la operación y elimina Auth, documentos, reservas, registros y ambos extremos sociales; `maintenance` reintenta operaciones pendientes.
-- Resto: denegado. Ningún documento público lleva correo ni contraseña.
+- La raíz deniega lectura/escritura por defecto. Una cuenta debe estar autenticada y no ser anónima; las escrituras de juego además requieren un perfil y ningún marcador de borrado.
+- `users/{uid}`: lectura para cuentas, escritura propia. Datos públicos sin correo; campos desconocidos rechazados. El nombre, nombre en minúsculas, código y fecha son inmutables.
+- `usernames/{nombreLower}` y `friendcodes/{codigo}`: no pueden crearse sueltos ni reasignarse. `newData.parent()` exige las reservas y el perfil en el mismo estado futuro. Una colisión rechaza todo el commit.
+- Registro inicial con XP cero, nivel 1 y estadísticas vacías. Avatar 1–12, código de seis caracteres, nombre validado y filtro generado desde configuración.
+- `partidas/{uid}/{id}`: privado, inmutable, máximo 600 XP, fecha de servidor y modos/dificultades permitidos. Debe existir el mismo ID en el progreso futuro y coincidir el incremento de XP.
+- El nivel debe corresponder exactamente a la curva de XP. No se permite bajar XP ni reutilizar un recibo.
 
-Los recibos y el límite restringen las escrituras; no prueban la autenticidad de los resultados. Ver `functions/VALIDACION-AVANZADA.md` para una ampliación autoritativa.
+## Social
 
-## Realtime Database
+- `social/{uid}/pendientes/{otroUid}` tiene `de`, `fecha` y `slot`; ambos extremos deben coincidir en la misma escritura.
+- `social/{uid}/confirmados/{otroUid}=true` solo se crea al aceptar una solicitud existente **como destinatario**; ambos pendientes desaparecen y ambos confirmados se crean juntos.
+- Rechazar, cancelar y retirar amistad actualizan ambos extremos, con la acción y el actor comprobados.
+- `socialCounts/{uid}` limita a 100 amigos y 50 solicitudes. No se puede poner a cero ni incrementar libremente: cada cambio está ligado a un único vínculo y a su contraparte en el mismo commit. Las escrituras concurrentes se rechazan si usan un contador obsoleto; reintentar relee el estado.
+- `socialLimits/{uid}/{slot}` tiene diez ranuras. Una ranura solo puede reutilizarse al cumplir una hora, tiene fecha `now` y destino ligado a la nueva solicitud. No se puede borrarla para reiniciar la tasa. Cancelar solicitudes no recupera ranuras.
+- `presencia/{uid}`: escritura propia con perfil activo, lectura propia o de amigo confirmado; sala y tiempo validados. `onDisconnect` se cancela al cerrar sesión/borrar cuenta.
+- `invitaciones/{dest}/{id}`: emisor miembro de un lobby activo y amistad mutua; nombre real, modo/dificultad de la sala y máximo dos minutos. Solo el destino lee su bandeja. `enviadas/{uid}/{id}` se valida junto a la invitación y permite limpiar los dos extremos.
 
-Toda lectura/escritura cliente permitida requiere cuenta no anónima y `cuentas/{uid}/activo=true`, reflejado por Admin. Cada ruta tiene validación de campos y deniega campos extra.
+## Récords
 
-| Rama | Regla |
-|---|---|
-| `cuentas` | Lectura/escritura cliente denegada; las reglas consultan la identidad Admin |
-| `amigos/{uid}` | Lectura propia; Admin refleja `true` únicamente si ambos documentos FS confirman amistad |
-| `presencia/{uid}` | Escritura propia, estados válidos, sala existente si está en sala, tiempo de servidor; lectura propia o de amigos |
-| `invitaciones/{destino}/{id}` | Crear solo el emisor miembro de la sala en lobby, con amistad mutua; nombre/UID/modo/dificultad reales y caducidad ≤2 minutos; destinatario lee y elimina |
-| `rooms/{codigo}/meta` | Crear por anfitrión; actualizar por anfitrión; migrar si el anterior está ausente; dificultad/semilla/práctica fijas durante la partida |
-| `jugadores/{uid}` | Escritura propia; nombre igual a identidad reflejada, avatar entero 1–12, slot/rol reclamado y sala no caducada |
-| `claims` | Transacciones propias para slots, avatares 1–12 y los tres roles; evita carreras al ocupar un mismo elemento |
-| `secreto` | Solo Vigía lee/escribe el monstruo de su ronda cooperativa; ID 1–30 |
-| `entregas`,`resultados` | Entrega única por UID/ronda; dueño en carrera o Dibujante en Coop; milisegundos 0–75000, imagen y probabilidades acotadas |
-| `veredictos` | Solo Vigía; monstruo coincide con su documento secreto |
-| `live` | Solo Dibujante, miniatura y ritmo mínimo de 300 ms |
-| `chat`,`whispers` | Identidad propia, texto acotado y ritmo mínimo; susurros solo con cero vidas |
-| `audits` | Propios, sobre otro jugador y una única vez |
+Cada dificultad tiene `records_solo_*`, `records_carrera_*` y `records_coop_*`, con lectura pública e índice `puntuacion`.
 
-Las reglas de RTDB no pueden leer Firestore. Por eso los clientes **no pueden escribir el espejo de amigos**. Los triggers de Functions con reintentos reparan interrupciones. `onDisconnect` marca presencia y jugador ausentes; listeners y claims se limpian al salir. La tarea de mantenimiento elimina salas e invitaciones caducadas.
+- Individual: clave UID, exactamente siete campos, identidad/avatar/nivel del perfil, puntuación entera acotada y fecha `now`. Solo el dueño escribe; el valor no puede bajar cuando `REEMPLAZAR_SOLO_SI_MEJOR` está activo.
+- Cooperativo: clave `uidMenor|uidIntermedio|uidMayor`, tres miembros distintos y ordenados, perfil del dueño canónico y diez campos (`miembros`, `sala`, `partida` además de los siete individuales).
+- El emisor debe ser miembro; la sala debe ser cooperativa, estar en podio, contener los miembros y coincidir en dificultad, partida y pasillos. Una semilla personalizada se rechaza. Los índices `equipos/{uid}/{d}/{equipo}` se escriben junto al mismo récord.
+- El borrado de un récord individual o de equipo solo se admite durante la eliminación de la cuenta de su dueño/miembro. No hay borrado arbitrario desde el menú.
+- El puesto se calcula contando resultados superiores; los empates comparten puesto. RTDB no tiene `count()` del servidor: el cliente descarga los registros superiores mediante el índice. Conviene tenerlo en cuenta si crece mucho el ranking.
 
-El último monstruo admite 0–30, las probabilidades solo las 56 etiquetas generadas de `monsters.json`, las vidas 0–5 y el avatar 1–12. Una semilla común permite reconstruir la bolsa desde código; las restricciones del Vigía son de interfaz y acceso a su documento, no una promesa de ocultación criptográfica de la semilla.
+## Salas y limpieza
 
-## Índices
+Se mantienen anfitrión, claims exclusivos, nombre del perfil, roles, secreto por destinatario, límite de chat y campos/tiempos acotados de la versión anterior. `salasJugador/{uid}` registra la pertenencia para eliminar las salas pertinentes cuando se borra la cuenta.
 
-`firestore.indexes.json` contiene los doce índices compuestos. Cooperativo: `miembros ARRAY_CONTAINS` + `puntuacion DESCENDING`, para las cuatro dificultades. Individuales: `puntuacion DESCENDING` + ID ascendente. El orden sencillo, los filtros por ID y el conteo usan además los índices automáticos de campo. Esperar a estado Enabled antes de probar. No excluir `puntuacion` de los índices.
+`caducidad/{codigo}` expone únicamente código y fecha, con índice de valor. Al conectarse, el cliente revisa hasta ocho entradas. La eliminación de una sala se permite únicamente si expiró, o si la cuenta que se elimina es participante. No se concede lectura global de chats/dibujos para hacer mantenimiento.
+
+`accountCleanup/{uid}` es privado. Solo su dueño puede crearlo, con su nombre/código actuales. Bloquea nuevas escrituras de juego. La limpieza elimina ambos extremos sociales y corrige contadores; después borra perfil, reservas y recibos juntos. Por último libera el marcador y elimina Auth, con un registro local de reintento. Auth y RTDB no pueden borrarse en una transacción común; el navegador debe completar o reintentar la operación.
+
+`deletedAccounts/{uid}` conserva solo el UID con valor true, privado e inmutable. Impide que un token anterior a la eliminación, todavía válido, vuelva a crear un perfil. No conserva nombre, correo ni estadísticas.
+
+Los datos temporales pueden permanecer mientras no haya clientes conectados. No existe una tarea periódica alojada. Las reglas restringen permisos y tamaños; los resultados de IA, tiempo y XP siguen calculándose en clientes, sin validación autoritativa de partidas.
+
+## Firestore anterior
+
+`firestore.rules` se entrega como cierre opcional de una base anterior. No forma parte del despliegue activo; no es necesario crear Firestore. La migración local puede leer la base como administrador aun si los clientes ya no tienen permisos. El respaldo se conserva hasta que su propietario decida limpiarlo.

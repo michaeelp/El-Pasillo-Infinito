@@ -1,11 +1,11 @@
-import { VERSION } from './config.js?v=1.3.0';
-import { getOptions,saveOptions,bestScore,localScores,clearScores } from './storage.js?v=1.3.0';
-import {globalScores,leaderboardError} from './records.js?v=1.3.0';
-import {currentUser} from './auth.js?v=1.3.0';
-import {populateDifficulties} from './difficulty.js?v=1.3.0';
-import {friendIds} from './friends.js?v=1.3.0';
-import { background } from './background.js?v=1.3.0';
-import { playerNode,getProfile } from './profile.js?v=1.3.0';
+import { VERSION } from './config.js?v=1.3.1';
+import { getOptions,saveOptions,bestScore,localScores,clearScores } from './storage.js?v=1.3.1';
+import {globalScores,leaderboardError} from './records.js?v=1.3.1';
+import {currentUser} from './auth.js?v=1.3.1';
+import {populateDifficulties} from './difficulty.js?v=1.3.1';
+import {friendIds} from './friends.js?v=1.3.1';
+import { background } from './background.js?v=1.3.1';
+import { playerNode,getProfile } from './profile.js?v=1.3.1';
 export const $=id=>document.getElementById(id);
 let toastTimer,dialogToken=0;
 export function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4500);}
@@ -26,7 +26,7 @@ function scoreList(scores,mode='solo'){
     if(currentUser()&&(s.uid===currentUser().uid||s.miembros?.includes(currentUser().uid)))li.className='own';
     rank.className='rank';rank.textContent=s.puesto||i+1;points.textContent=(s.puntuacion??s.p)+(mode==='race'?' puntos':' pasillos');level.className='level-badge';level.textContent=s.nivel?`Niv. ${s.nivel}`:'';
     const identity=playerNode(s);if(s.uid){identity.tabIndex=0;identity.title='Ver perfil';const open=()=>document.dispatchEvent(new CustomEvent('pasillo-profile',{detail:s.uid}));identity.onclick=open;identity.onkeydown=e=>{if(e.key==='Enter')open();};}
-    li.append(rank,identity,level,points);if(s.miembros){const team=document.createElement('div');team.className='score-team';team.textContent='Equipo';li.append(team);import('./profile.js?v=1.3.0').then(async p=>{const members=await Promise.all(s.miembros.map(p.readProfile));if(team.isConnected)team.replaceChildren(...members.filter(Boolean).map(m=>p.playerNode(m)));}).catch(()=>{});}ol.append(li);});return ol;
+    li.append(rank,identity,level,points);if(s.miembros){const team=document.createElement('div');team.className='score-team';team.textContent='Equipo';li.append(team);import('./profile.js?v=1.3.1').then(async p=>{const members=await Promise.all(s.miembros.map(p.readProfile));if(team.isConnected)team.replaceChildren(...members.filter(Boolean).map(m=>p.playerNode(m)));}).catch(()=>{});}ol.append(li);});return ol;
 }
 async function openDialog(type,audio){
   const content=$('modal-content');content.replaceChildren();$('modal').showModal();$('modal-title').textContent={records:'Lista de Condenados',options:'Opciones',help:'Cómo sobrevivir',credits:'Créditos'}[type];const token=++dialogToken;

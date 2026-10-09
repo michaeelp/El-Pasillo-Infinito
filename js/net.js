@@ -1,9 +1,9 @@
-import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.3.0';
-import { firebaseApp, isConfigured, withDeadline } from './sdk.js?v=1.3.0';
-import { sanitizeName } from './storage.js?v=1.3.0';
-import {currentUser} from './auth.js?v=1.3.0';
-import {setPresence} from './friends.js?v=1.3.0';
-import {difficulty} from './difficulty.js?v=1.3.0';
+import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.3.1';
+import { firebaseApp, isConfigured, withDeadline } from './sdk.js?v=1.3.1';
+import { sanitizeName } from './storage.js?v=1.3.1';
+import {currentUser} from './auth.js?v=1.3.1';
+import {setPresence} from './friends.js?v=1.3.1';
+import {difficulty} from './difficulty.js?v=1.3.1';
 export const onlineConfigured = () => isConfigured() && !!FIREBASE_CONFIG.databaseURL;
 export const networkError = error => /permission|denied/i.test(error?.message || '') ? 'Acceso rechazado. Revisa las reglas de Firebase.' : /operation-not-allowed/i.test(error?.message || '') ? 'Activa Email/Contraseña en Firebase.' : error?.message==='Inicia sesión.'?'Inicia sesión.':'No se pudo conectar. Reintenta.';
 export const shortError = error => /^(Espera|Avatar|Ese rol|No se|La sala|La partida|Cooperativo|Faltan|Firebase)/.test(error?.message||'') ? error.message : networkError(error);
@@ -33,6 +33,7 @@ export class Network {
           this.emit();
         },reject); this.globalStops.push(stop);
       });
+      await this.sweepExpired().catch(()=>{});
     })()).catch(error => {this.db = null; for (const stop of this.globalStops.splice(0)) stop(); throw error;}).finally(() => {this.loading = null;});
     return this.loading;
   }
@@ -55,7 +56,7 @@ export class Network {
         if (old) return;
         return {host:this.uid,modo:mode,estado:'lobby',ronda:0,pasillos:0,vidas:difficulty(settings.dificultad).vidas,inicioFase:0,semilla:settings.semilla||0,dificultad:settings.dificultad||'normal',personalizada:!!settings.personalizada,createdAt:this.now(),expiresAt:this.now()+ONLINE.roomTtlMs,uniqueAvatars:ONLINE.uniqueAvatars};
       });
-      if (created.committed) {await this.join(this.code,profile); return;}
+      if (created.committed) {await this.sdk.set(this.sdk.ref(this.db,`caducidad/${this.code}`),created.snapshot.val().expiresAt);await this.join(this.code,profile); return;}
     }
     this.code = ''; throw new Error('No se pudo crear la sala.');
   }
@@ -78,6 +79,7 @@ export class Network {
         this.joinSlot=slot;
         await this.set(`jugadores/${this.uid}`, {nombre:sanitizeName(profile.nombre),avatar:profile.avatar,slot,rol:'',listo:false,iaLista:false,progreso:0,ausente:false,changed:this.now()});
       }
+      await this.sdk.set(this.sdk.ref(this.db,`salasJugador/${this.uid}/${this.code}`),true);
       this.subscribe(); await this.presence();
       try {sessionStorage.setItem('pasillo-room',this.code);} catch {}
     } catch (error) {
@@ -111,6 +113,15 @@ export class Network {
   }
   async player(values) {return this.update(`jugadores/${this.uid}`,values);}
   async meta(values) {return this.update('meta',{...values,expiresAt:this.now()+ONLINE.roomTtlMs});}
+  // Limpieza limitada al conectarse: solo se descarga el índice de tiempos, no las salas.
+  // Las reglas permiten borrar únicamente salas que ya caducaron.
+  async sweepExpired(){
+    const s=this.sdk,expired=await withDeadline(s.get(s.query(s.ref(this.db,'caducidad'),s.orderByValue(),s.endAt(this.now()),s.limitToFirst(8))));
+    for(const code of Object.keys(expired.val()||{})){
+      try{const meta=(await s.get(s.ref(this.db,`rooms/${code}/meta`))).val();if(meta?.expiresAt>this.now()){await s.set(s.ref(this.db,`caducidad/${code}`),meta.expiresAt);continue;}}catch{}
+      try{await s.update(s.ref(this.db),{[`rooms/${code}`]:null,[`caducidad/${code}`]:null});}catch{}
+    }
+  }
   watchSecret(round, callback) {return this.sdk.onValue(this.ref(`secreto/${round}/${this.uid}`),snap=>callback(snap.val()),error=>this.fail(error));}
   async secret(round, monsterId) {return this.set(`secreto/${round}/${this.uid}`, {monstruoId:monsterId});}
   async result(round,result) {return this.set(`resultados/${round}/${this.uid}`,{...result,t:this.now()});}
@@ -141,6 +152,7 @@ export class Network {
         } else if (own) await this.player({ausente:true,listo:false,changed:this.now()});
       } catch {}
     }
+    if(this.code&&this.db&&this.data.meta?.estado==='lobby')try{await this.sdk.remove(this.sdk.ref(this.db,`salasJugador/${this.uid}/${this.code}`));}catch{}
     this.code=''; this.data={meta:null,jugadores:{},entregas:{},resultados:{},veredictos:{},chat:{},live:{},whispers:{},audits:{}}; this.error='';
     setPresence().catch(()=>{});
     try {sessionStorage.removeItem('pasillo-room');} catch {}

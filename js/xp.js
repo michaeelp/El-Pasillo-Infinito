@@ -1,8 +1,8 @@
 // Fórmulas puras para XP/estadísticas y persistencia exactamente una vez por partida.
 // Son resúmenes de cliente: las reglas acotan escrituras, no certifican que se jugó.
-import {XP,MONSTER_COUNT,DIFFICULTIES} from './config.js?v=1.3.0';
-import {currentUser} from './auth.js?v=1.3.0';
-import {firestoreService,withDeadline} from './sdk.js?v=1.3.0';
+import {XP,MONSTER_COUNT,DIFFICULTIES} from './config.js?v=1.3.1';
+import {currentUser} from './auth.js?v=1.3.1';
+import {databaseService,readData,withDeadline} from './sdk.js?v=1.3.1';
 export const xpParaSubir=n=>Math.round(XP.base*Math.pow(n,XP.exponente));
 export function levelFor(xp) {let nivel=1,total=0;while(nivel<XP.nivelMax&&xp>=total+xpParaSubir(nivel)){total+=xpParaSubir(nivel++);}return {nivel,actual:Math.max(0,xp-total),necesaria:xpParaSubir(nivel),total};}
 export const emptyStats=()=>({partidas:0,pasillos:0,mejores:{},precisionTotal:0,precisionMuestras:0,tiempoMs:0,rachaMax:0,carrerasGanadas:0,cooperativas:0,bestiario:{},logros:[]});
@@ -30,16 +30,16 @@ export function updatedStats(old,match) {
   unlock('racha',s.rachaMax>=5);unlock('coop',s.cooperativas>=1);unlock('precision',ps.some(p=>p>=.9));unlock('pesadilla',match.dificultad==='pesadilla'&&match.pasillos>=1);unlock('veterano',s.partidas>=20);
   return s;
 }
-// Una transacción y un recibo inmutable impiden cobrar dos veces la misma partida al reconectar.
+// El recibo y el progreso se escriben atómicamente. Las reglas comprueban el valor anterior;
+// una pestaña concurrente obliga a releer, sin repetir la recompensa de una partida.
 export async function awardMatch(match) {
   const user=currentUser();if(!user||match.personalizada)return {xp:0,nivelAnterior:1,nivel:1};
-  const {f,db}=await firestoreService(),ref=f.doc(db,'users',user.uid),receipt=f.doc(ref,'partidas',match.id);
-  return withDeadline(f.runTransaction(db,async tx=>{
-    const [profile,previous]=await Promise.all([tx.get(ref),tx.get(receipt)]);if(!profile.exists())throw new Error('Perfil no disponible.');
-    const p=profile.data();if(previous.exists())return {xp:0,nivelAnterior:p.nivel,nivel:p.nivel};
+  const {r,db}=await databaseService();
+  for(let attempt=0;attempt<5;attempt++){
+    const [profile,previous]=await Promise.all([readData(`users/${user.uid}`),readData(`partidas/${user.uid}/${match.id}`)]);if(!profile.exists())throw new Error('Perfil no disponible.');
+    const p=profile.val();if(previous.exists())return {xp:0,nivelAnterior:p.nivel,nivel:p.nivel};
     const gained=matchXp(match),xp=p.xp+gained,nivel=levelFor(xp).nivel;
-    tx.set(receipt,{xp:gained,fecha:f.serverTimestamp(),modo:match.modo,dificultad:match.dificultad});
-    tx.update(ref,{xp,nivel,estadisticas:updatedStats(p.estadisticas,match),ultimaPartida:match.id});
-    return {xp:gained,nivelAnterior:p.nivel,nivel};
-  }));
+    try{await withDeadline(r.update(r.ref(db),{[`partidas/${user.uid}/${match.id}`]:{xp:gained,fecha:r.serverTimestamp(),modo:match.modo,dificultad:match.dificultad},[`users/${user.uid}/xp`]:xp,[`users/${user.uid}/nivel`]:nivel,[`users/${user.uid}/estadisticas`]:updatedStats(p.estadisticas,match),[`users/${user.uid}/ultimaPartida`]:match.id}));return {xp:gained,nivelAnterior:p.nivel,nivel};}
+    catch(error){if(attempt===4)throw error;}
+  }
 }

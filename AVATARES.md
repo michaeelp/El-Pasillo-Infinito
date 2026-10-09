@@ -1,4 +1,4 @@
-# Avatares 1.3.0
+# Avatares 1.3.1
 
 Doce retratos. `avatars.json` contiene únicamente `id`, `nombre`, `ruta` y `color`; el nombre es el del avatar, no el de usuario. La selección conserva la cuenta y permite cambiar de avatar; en una sala se respetan las reclamaciones de avatares únicos.
 

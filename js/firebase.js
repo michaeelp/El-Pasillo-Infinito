@@ -1,3 +1,3 @@
 // Punto de entrada de compatibilidad. Las colecciones anteriores ya no se utilizan.
-export {globalScores,publishRecord,leaderboardError} from './records.js?v=1.3.0';
-export {isConfigured} from './sdk.js?v=1.3.0';
+export {globalScores,publishRecord,leaderboardError} from './records.js?v=1.3.1';
+export {isConfigured} from './sdk.js?v=1.3.1';

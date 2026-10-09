@@ -1,4 +1,4 @@
-# Entrega 1.3.0 — Ampliación 4
+# Entrega 1.3.1 — Ampliación 4
 
 El proyecto completo conserva los 30 monstruos, lore, sonidos, fondos persistentes y fuentes locales de la versión anterior. Añade las cuentas, perfiles, amigos, dificultades, bolsa y lienzo de esta ampliación. No requiere compilar el cliente.
 
@@ -6,7 +6,7 @@ El proyecto completo conserva los 30 monstruos, lore, sonidos, fondos persistent
 
 | Área | Archivos |
 |---|---|
-| Cuentas y SDK compartido | `js/auth.js`, `js/sdk.js` |
+| Cuentas y SDK compartido | `js/auth.js`, `js/accounts.js`, `js/sdk.js` |
 | Perfil, estadísticas, bestiario y 12 logros | `js/profile.js`, `js/xp.js` |
 | Solicitudes, presencia, enlaces e invitaciones | `js/friends.js` |
 | Récord único, top 50 y puesto propio | `js/records.js`, `js/firebase.js`, `js/ui.js` |
@@ -14,10 +14,10 @@ El proyecto completo conserva los 30 monstruos, lore, sonidos, fondos persistent
 | Preparación, Solo, lobby y online | `js/game.js`, `js/lobby.js`, `js/net.js`, `js/online-game.js` |
 | Lienzo | `js/draw.js`, `js/draw/wheel.js`, `js/draw/shapes.js`, `js/draw/brushes.js`, `js/draw/tools.js` |
 | Interfaz en español | `index.html`, `css/accounts.css`, `css/draw.css` |
-| Servidor de identidad y social | `functions/index.cjs`, `functions/services.cjs`, `functions/settings.json` |
-| Reglas e índices | `firestore.rules`, `database.rules.json`, `database.rules.commented.jsonc`, `firestore.indexes.json` |
+| Identidad sin servidor propio | `js/accounts.js`, `tools/account_rules.mjs` |
+| Reglas e índices de Spark | `database.rules.json`, `database.rules.commented.jsonc` |
 
-Los imports y recursos del cliente usan `v=1.3.0`. Subir juntos los archivos evita mezclar módulos de versiones distintas.
+Los imports y recursos del cliente usan `v=1.3.1`. Subir juntos los archivos evita mezclar módulos de versiones distintas.
 
 ## Cuatro avatares nuevos
 
@@ -34,6 +34,6 @@ Los prompts y las referencias de estilo se documentan en `assets/PROMPTS-AMPLIAC
 
 ## Activación y pruebas
 
-`README.md` explica el despliegue de las funciones, reglas e índices, Email/Contraseña, plantillas de correo y dominio autorizado de GitHub Pages. `REGLAS.md` describe cada rama de seguridad. `PRUEBAS.md` distingue las comprobaciones automáticas de las que requieren Firebase publicado, correo real, dispositivos o inferencia CLIP real.
+`README.md` explica la publicación de reglas de Realtime Database, Email/Contraseña, plantillas de correo y dominio autorizado de GitHub Pages. `REGLAS.md` describe cada rama de seguridad. `PRUEBAS.md` distingue las comprobaciones automáticas de las que requieren Firebase publicado, correo real, dispositivos o inferencia CLIP real.
 
-La ejecución de interfaz usa el SDK y handlers callable reales contra emuladores; solo sustituye CLIP por etiquetas controladas. Su informe está en `PRUEBAS-RESULTADOS.json`. La opción de verificación autoritativa de resultados se describe en `functions/VALIDACION-AVANZADA.md`.
+La ejecución de interfaz usa el SDK real contra emuladores de Auth/RTDB; solo sustituye CLIP por etiquetas controladas. Su informe está en `PRUEBAS-RESULTADOS.json`. `CAMBIOS-SPARK.md` y `MIGRACION-SPARK.md` describen la adaptación y la copia opcional de datos anteriores.

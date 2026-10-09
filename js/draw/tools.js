@@ -1,6 +1,6 @@
-import {COLORS} from '../draw.js?v=1.3.0';
-import {ColorWheel} from './wheel.js?v=1.3.0';
-import {BRUSHES} from './brushes.js?v=1.3.0';
+import {COLORS} from '../draw.js?v=1.3.1';
+import {ColorWheel} from './wheel.js?v=1.3.1';
+import {BRUSHES} from './brushes.js?v=1.3.1';
 const names={brush:'Pincel (B)',eraser:'Goma (E)',fill:'Cubo (G)',eyedropper:'Cuentagotas (I)',line:'Línea (L)',rectangle:'Rectángulo (R)',ellipse:'Elipse (C)',triangle:'Triángulo (T)',star:'Estrella (S)',heart:'Corazón (H)',arrow:'Flecha (A)'};
 export function setupTools(drawing) {
   const $=id=>document.getElementById(id),recent=[];

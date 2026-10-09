@@ -1,99 +1,101 @@
-# El Pasillo Infinito 1.3.0
+# El Pasillo Infinito 1.3.1 · Spark
 
-Juego estático en español para GitHub Pages: Solo, Carrera (2–8 jugadores) y Cooperativo (3). Incluye 30 monstruos y sus 60 sonidos, 12 avatares, cuatro dificultades, cuentas, amigos, perfiles, XP, récords por categoría y lienzo avanzado. Los 22 retratos y los ocho avatares originales se conservan.
+Juego estático en español, con 30 monstruos, 12 avatares, cuatro dificultades y modos Solo, Carrera y Cooperativo. Esta versión usa **Firebase Authentication (Email/Contraseña) y Realtime Database**. No despliega Cloud Functions, no necesita Firestore y puede usarse en el plan Spark dentro de sus cuotas gratuitas. [Planes oficiales de Firebase](https://firebase.google.com/docs/projects/billing/firebase-pricing-plans).
 
-## Publicar el juego
+## Sustituir la versión anterior
 
-1. Descomprime este proyecto. Sube **el contenido de la carpeta**, con `index.html` en la raíz y las carpetas `assets/`, `css/` y `js/` completas. GitHub no representa carpetas vacías: todos los recursos entregados tienen archivos.
-2. En GitHub: **Settings → Pages → Deploy from a branch → main → /(root)**. Abre la URL HTTPS publicada.
-3. Publica juntos todos los archivos de esta versión. El menú debe indicar **v1.3.0**. Usa Ctrl+F5 después de actualizar. No renombres `FIREBASE_CONFIG`: los imports usan exactamente ese nombre.
-4. Realiza la configuración de Firebase indicada abajo. El invitado puede jugar Solo con récord local; las cuentas, amistades y eliminación completa requieren las funciones incluidas.
+1. Extrae el ZIP y copia **el contenido de `el-pasillo-infinito/`** a la raíz de tu repositorio.
+2. Elimina las carpetas antiguas `functions/` y `cleanup/` si quedaron de la entrega anterior. El ZIP nuevo ya no las incluye.
+3. Conserva las carpetas `assets/`, `css/` y `js/` con su estructura. En GitHub puedes usar GitHub Desktop para añadirlas completas.
+4. Publica las reglas de Realtime Database indicadas abajo y sube los archivos a GitHub Pages.
+5. Recarga con Ctrl+F5. `VERSION`, HTML, CSS e imports usan `1.3.1`; no mezcles recursos viejos con nuevos.
 
-No hay compilación del juego. Para servirlo localmente: `python3 -m http.server 8000`. Los módulos ES no funcionan abriendo `index.html` con `file://`.
+La configuración pública que proporcionaste se conserva en `js/config.js`, como `export const FIREBASE_CONFIG`. El import y el export deben tener exactamente ese nombre. Un error que siga mencionando `v=1.0.0` indica que el navegador o GitHub Pages está entregando archivos anteriores. La URL debe apuntar a la carpeta que contiene `index.html`. `.nojekyll` también está incluido.
 
-## Firebase: pasos completos
+## Firebase: configuración gratuita
 
-Se conserva tu configuración pública en `js/config.js`. Usa **el mismo proyecto** para Authentication, Cloud Firestore, Realtime Database y Functions. Una `databaseURL` no crea Firestore ni publica sus reglas: el leaderboard usa **Cloud Firestore**.
+Usa el mismo proyecto de Authentication y Realtime Database que aparece en `FIREBASE_CONFIG`.
 
-1. **Authentication → Sign-in method:** activa **Email/Password**. En **Authentication → Settings → Password policy**, fija longitud mínima **8** y modo **Require**; así el proveedor también exige el mínimo del juego. Esta versión no utiliza sesiones anónimas. Puedes desactivar el proveedor anónimo después de sustituir los archivos antiguos.
-2. **Authentication → Settings → Authorized domains:** añade **`usuario.github.io`**, sustituyendo `usuario` por tu usuario de GitHub. Es el dominio, sin `https://`, `/repositorio` ni barras. Añade también tu dominio propio si lo usas; para pruebas locales añade `localhost` cuando sea necesario.
-3. **Authentication → Templates:** configura en español el remitente, asunto y texto de recuperación de contraseña; revisa también verificación y cambio de dirección. Conserva los marcadores de Firebase y su manejador de acciones predeterminado si no implementas otro. El SDK establece `languageCode = 'es'`. Prueba la recepción real, incluida la carpeta de spam.
-4. Crea **Cloud Firestore**, si aún no existe. La pantalla Database de Realtime Database es otro producto.
-5. Comprueba que la URL de **Realtime Database** coincide con `FIREBASE_CONFIG.databaseURL`.
-6. Instala Node.js 22, Java para los emuladores y las dependencias. Desde esta carpeta:
+1. En **Authentication → Sign-in method**, activa **Correo electrónico/Contraseña**.
+2. En **Authentication → Settings → Password policy**, usa Require y mínimo ocho caracteres, para que coincida con el juego.
+3. En **Authentication → Settings → Authorized domains**, añade `TU_USUARIO.github.io`, sin protocolo ni ruta. Para desarrollo local añade `localhost` si falta.
+4. En **Realtime Database**, crea o usa la base predeterminada. Verifica que su URL coincida con `databaseURL` de `js/config.js`.
+5. Abre **Realtime Database → Reglas**, pega **todo `database.rules.json`** y pulsa **Publicar**. No uses las reglas de Firestore en esta pantalla.
+6. En **Authentication → Plantillas**, revisa restablecimiento y verificación de correo: remitente «El Pasillo Infinito», idioma español y dominio de acciones predeterminado de Firebase. La sesión utiliza `languageCode='es'`. Se conserva el cuerpo predeterminado de verificación; el juego no obliga a verificar para jugar.
+
+**No necesitas activar facturación ni desplegar Functions.** Las reglas y sus índices están en un solo archivo de RTDB. Si prefieres la CLI, desde la carpeta del proyecto:
 
 ```sh
-npm install
-npm install --prefix functions
-npm run generate:rules
-npx firebase login
-npx firebase deploy --project el-pasillo-infinito --only firestore:rules,firestore:indexes,database,functions
+npx firebase-tools@14.22.0 login
+npx firebase-tools@14.22.0 deploy --project el-pasillo-infinito --only database
 ```
 
-El comando publica `firestore.rules`, `firestore.indexes.json`, `database.rules.json` y las ocho funciones de `functions/`. No modifica GitHub Pages. Cambia el identificador del proyecto si usas otro. La región configurada es `us-central1`; `FUNCTIONS_REGION` debe coincidir al regenerar y desplegar.
+En PowerShell puedes usar `npx.cmd` en ambos comandos para evitar el bloqueo de `npx.ps1`; no hace falta cambiar la política de ejecución. El comando solo publica las reglas de RTDB; GitHub Pages se actualiza desde tu repositorio.
 
-**Functions necesita el plan Blaze para desplegarse.** Los emuladores funcionan localmente. Consulta la [documentación oficial de despliegue](https://firebase.google.com/docs/functions/get-started) antes de activar facturación. Esta versión utiliza Functions para las reservas, la sincronización segura de amistades, récords de equipo y eliminación completa: no basta con subir el HTML.
+Referencias: [Email/Password](https://firebase.google.com/docs/auth/web/password-auth), [cuentas y recuperación](https://firebase.google.com/docs/auth/web/manage-users), [actualizaciones atómicas de RTDB](https://firebase.google.com/docs/database/web/read-and-write#update_specific_fields), [reglas](https://firebase.google.com/docs/database/security/rules-conditions).
 
-Referencias oficiales: [Email/Password](https://firebase.google.com/docs/auth/web/password-auth), [gestión y recuperación de cuentas](https://firebase.google.com/docs/auth/web/manage-users), [dominios de acciones de correo](https://firebase.google.com/docs/auth/web/passing-state-in-email-actions), [funciones callable](https://firebase.google.com/docs/functions/callable).
+## Si ya hay datos en Firestore
 
-## Si no aparecen récords
+Las cuentas de **Authentication conservan su correo y contraseña**. Los datos nuevos del juego se guardan en RTDB. Antes de publicar la versión nueva, puedes copiar perfiles, XP, estadísticas, recibos, amigos, solicitudes y las doce categorías de récords con la herramienta local `tools/migrate-spark.mjs`; instrucciones en **MIGRACION-SPARK.md**. No es una función alojada y no requiere Blaze.
 
-- Entra con una cuenta. El invitado solo ve récords locales.
-- Selecciona el modo y la dificultad correctos. Una partida con semilla personalizada no publica récord ni XP.
-- Crea Firestore y despliega las reglas **de este proyecto**, no las de Realtime Database en Firestore.
-- Publica un resultado de al menos un pasillo o un punto. El guardado es automático; no se pide otro nombre.
-- Espera a que los índices terminen de crearse. El mensaje «Falta un índice de Firestore» identifica ese caso. Pulsa REINTENTAR después de corregirlo.
-- «Revisa las reglas de Firestore» indica permisos. «Sin conexión» indica conexión; no se presenta como una lista vacía.
+Sin migración, las cuentas existentes pueden iniciar sesión y completar un perfil nuevo, con XP y récords nuevos. Por eso conviene migrar primero si ya tienes progreso guardado. La herramienta conserva el origen como respaldo, verifica conflictos y por defecto solo muestra una vista previa. No ejecutes ambas versiones simultáneamente durante el cambio.
 
-Las colecciones antiguas `scores`, `scores_carrera` y `scores_coop` quedan sin acceso desde este cliente y las reglas. **No se migran automáticamente:** tenían nombres libres y no permiten atribuir con seguridad un resultado a un UID. Los archivos antiguos no se borran del proyecto real por este trabajo.
+`firestore.rules` es un cierre opcional de la base anterior: después de migrar puedes pegarlo en la consola de Firestore para impedir que la web antigua siga leyendo o escribiendo allí. No se crea una base Firestore nueva ni se despliega ese archivo desde `firebase.json`.
 
-## Cuentas e identidad
+## Si no aparece el ranking
 
-Email/Password modular 10.14.1 por gstatic, con `browserLocalPersistence`. El correo se guarda exclusivamente en Authentication: ningún documento público ni pantalla del juego lo muestra. El nombre tiene 3–14 letras (incluidos acentos españoles), números o `_`, unicidad por minúsculas y filtro configurable `USERNAMES`. Nombre, código personal y fecha de creación son inmutables. El avatar admite 1–12.
+- Usa una cuenta; el invitado conserva únicamente récords locales.
+- Publica el archivo nuevo completo en **Realtime Database → Reglas**.
+- Comprueba proyecto y `databaseURL`, y recarga los recursos de la versión 1.3.1.
+- «Revisa las reglas de Realtime Database» identifica permisos; «Sin conexión» identifica conexión. Un error no se muestra como una lista vacía.
+- Solo registra un resultado por UID, modo y dificultad. Cooperativo registra un resultado por equipo. Los empates comparten puesto; se muestran top 50 y tu posición aunque quede fuera.
+- Una semilla escrita es práctica: no concede XP ni récord global. Un resultado de cero no crea un récord.
 
-`provisionAccount` reserva `users/{uid}`, `usernames/{nombreLower}` y `friendcodes/{codigo}` en una transacción Firestore. Si falla, no queda un nombre reservado a medias. **Auth y Firestore no admiten una transacción común:** el cliente compensa un fallo confirmado eliminando el usuario de Auth recién creado. Si se pierde una respuesta, comprueba si el perfil se creó; una cuenta Auth pendiente ofrece COMPLETAR CUENTA al iniciar sesión. Así una interrupción no borra una cuenta correctamente creada.
+## Cuentas, progreso y seguridad
 
-Cambiar contraseña y eliminar cuenta requieren la contraseña actual. La eliminación usa un marcador privado, se puede reanudar y borra perfil/subcolecciones, nombre, código, récords individuales y de sus equipos, amistades de ambos extremos, presencia, invitaciones y salas donde participa; termina eliminando Authentication. Una tarea horaria retoma operaciones interrumpidas. No se cambian nombres desde el perfil.
+La advertencia lleva a Iniciar sesión / Crear cuenta / Invitado. El nombre permanente admite 3–14 letras, números y `_`, con filtro configurable de palabras reservadas/ofensivas. Una actualización atómica reserva **perfil + nombre en minúsculas + código de amigo + contadores sociales**; las reglas rechazan un conflicto completo, sin dejar reservas parciales. El correo solo está en Authentication.
 
-## Datos y reglas
+Auth y RTDB son servicios separados: no existe una transacción común. Un fallo confirmado del alta elimina el usuario Auth recién creado; una respuesta perdida comprueba el perfil antes de compensar. Si solo se creó Auth, el siguiente acceso ofrece completar el perfil. Se usa `browserLocalPersistence` para F5, cierre y retorno al navegador.
 
-| Ruta | Contenido / acceso |
+El perfil conserva avatar, XP, nivel, estadísticas, mejores por modo/dificultad, 30 entradas de bestiario y 12 logros. XP: Solo 10×multiplicador por pasillo + 0–5 por precisión; Carrera `floor(puntos/50)` + 50/30/15 por puesto; Cooperativo 5×multiplicador por pasillo. Curva `round(80*n^1.35)`, máximo nivel 99 y 600 XP por partida. Progreso y recibo inmutable se escriben juntos; escrituras concurrentes releen el estado y no duplican una recompensa.
+
+Las puntuaciones, estadísticas y dibujos se calculan en el navegador: las reglas acotan quién escribe y cuánto, pero no certifican que alguien jugó o que CLIP acertó. El ranking sigue siendo apropiado para este juego entre amigos, sin arbitraje de partidas en un servidor.
+
+Eliminar cuenta reautentica y limpia datos antes de eliminar Auth. Un marcador propio bloquea nuevas escrituras de juego y conserva información para reintentar; un registro local cubre un fallo después de liberar las reservas y antes de completar Auth. Si se interrumpe, vuelve a iniciar sesión desde el mismo navegador o reintenta el botón. Queda únicamente una marca privada del UID eliminado, sin nombre ni correo, para impedir recrear su perfil con un token antiguo que todavía no haya caducado. No hay tarea de servidor ejecutándose cuando el navegador está cerrado.
+
+## Datos de Realtime Database
+
+| Ruta | Contenido y acceso |
 |---|---|
-| `users/{uid}` | nombre, nombreLower, avatar, xp, nivel, codigoAmigo, creadoEn, estadisticas, preferencias y ultimaPartida; lectura para cuentas |
-| `usernames/{nombreLower}` | `{uid}`, único e inmutable |
-| `friendcodes/{codigo}` | `{uid}`, seis caracteres, único |
-| `users/{uid}/partidas/{id}` | recibo inmutable de XP; propia cuenta |
-| `users/{uid}/amigos/{otroUid}` | pendienteEnviada, pendienteRecibida o amigos; propia lectura, servidor escribe ambos extremos |
-| `records_solo_{dificultad}/{uid}` | un récord por cuenta y dificultad |
-| `records_carrera_{dificultad}/{uid}` | un récord por cuenta y dificultad |
-| `records_coop_{dificultad}/{hash}` | un récord por equipo: SHA-256 de UIDs ordenados unidos por `|` |
-| RTDB `cuentas/{uid}` | identidad mínima reflejada por Admin; los clientes no escriben |
-| RTDB `amigos/{uid}/{otroUid}` | `true` solo para amistad confirmada mutua; los clientes no escriben |
-| RTDB `presencia/{uid}` | estado/sala/tiempo; propia escritura y lectura de amigos, `onDisconnect` |
-| RTDB `invitaciones/{destino}/{id}` | emisor, nombre, sala, modo, dificultad, creación y caducidad de dos minutos |
-| RTDB `rooms/{codigo}` | sala, jugadores, claims, chat, entregas, resultados y roles |
+| `users/{uid}` | perfil público para cuentas; solo propietario modifica; sin correo |
+| `usernames/{nombreLower}`, `friendcodes/{codigo}` | reservas inmutables ligadas al perfil |
+| `partidas/{uid}/{id}` | recibo privado e inmutable de XP |
+| `social/{uid}/pendientes/{otroUid}` | solicitud con emisor; solo el destinatario acepta |
+| `social/{uid}/confirmados/{otroUid}` | amistad mutua; creación y retirada en ambos extremos |
+| `socialCounts/{uid}`, `socialLimits/{uid}` | límites 100/50 y diez envíos por hora móvil |
+| `presencia/{uid}` | propia escritura, lectura entre amigos, `onDisconnect` |
+| `invitaciones/{uid}/{id}`, `enviadas/{uid}/{id}` | lobby, amigos mutuos, dos minutos; índice para limpiar |
+| `records_solo_{d}/{uid}`, `records_carrera_{d}/{uid}` | siete campos, identidad propia y mejor puntuación |
+| `records_coop_{d}/{equipo}` | tres miembros, sala finalizada, partida y semilla comprobadas |
+| `equipos/{uid}/{d}/{equipo}` | índice validado junto al récord cooperativo |
+| `rooms/{codigo}`, `salasJugador/{uid}/{codigo}` | salas y pertenencia para limpiar al eliminar cuenta |
+| `caducidad/{codigo}` | solo código/tiempo; limpieza limitada de salas caducadas al conectarse |
+| `deletedAccounts/{uid}` | marca sin nombre/correo, impide recrear la cuenta con un token antiguo |
+| `accountCleanup/{uid}` | marcador privado de eliminación |
 
-El registro individual tiene exactamente `uid,nombre,avatar,nivel,puntuacion,fecha,dificultad`. El registro cooperativo añade **`miembros`**, necesario para el filtro Amigos y eliminar récords de una cuenta que perteneció al equipo. Su dueño canónico es el menor UID; la callable comprueba la sala terminada y escribe un hash único, sin confiar en un ID enviado por el cliente. Cada miembro puede solicitar el mismo guardado; no produce duplicados. Los nombres se recuperan de `users`, nunca de un formulario de resultados.
+`d`: facil / normal / dificil / pesadilla. Las claves cooperativas son **los tres UID ordenados, separados por `|`**: a diferencia del hash anterior, RTDB puede comprobar esta clave en sus reglas y rechazar equipos duplicados. Los récords de equipo añaden `miembros`, `sala` y `partida` a los siete campos individuales. La migración convierte las claves anteriores.
 
-`REEMPLAZAR_SOLO_SI_MEJOR=true` conserva el mayor. Si lo cambias a `false`, ejecuta `npm run generate:rules` y despliega de nuevo: cliente, reglas y Functions deben compartir el valor. La lista muestra top 50, niveles, avatares, nombres, puntuación y puesto propio incluso fuera del top; los empates comparten puesto. El puesto global se obtiene con `getCountFromServer`. Para Amigos se filtran UIDs confirmados y se eliminan equipos duplicados.
+Los índices `puntuacion` de las doce categorías están en `.indexOn`. Para el puesto propio, RTDB consulta los resultados estrictamente superiores y los cuenta en el cliente; su consumo crece con la cantidad de resultados superiores. El filtro Amigos consulta las claves individuales y de equipos y elimina duplicados antes de ordenar.
 
-Reglas completas: `firestore.rules`, `database.rules.json`. Versión comentada de RTDB: `database.rules.commented.jsonc`, con las mismas reglas. Explicación por rama: `REGLAS.md`. Índices compuestos desplegables: `firestore.indexes.json`; las cuatro consultas cooperativas combinan `miembros CONTAINS` y `puntuacion DESCENDING`. Los demás índices incluidos fijan el orden de puntuación/ID. Las consultas simples de puntuación y conteo utilizan los índices de campo de Firestore. [Consultas de conteo oficiales](https://firebase.google.com/docs/firestore/query-data/aggregation-queries).
+## Amigos y online
 
-## XP, estadísticas y logros
+Añade por `@nombre`, sin distinguir mayúsculas, o por `?amigo=CODIGO`. El enlace recibido sin sesión se conserva hasta acceder. Solicitudes: aceptar, rechazar, cancelar, eliminar y desactivar recepción. Las reglas obligan a actualizar ambos extremos y sus contadores. Diez ranuras de tiempo de servidor limitan a diez envíos en cualquier hora móvil, incluso si se cancelan.
 
-Solo: 10 × multiplicador por pasillo más 0–5 por precisión ganadora. Carrera: `floor(puntos/50)` más 50/30/15 por los tres primeros puestos. Cooperativo: 5 × multiplicador por pasillo. Se acumula al finalizar la partida en una transacción con recibo único, límite 600 XP, para evitar cobro duplicado al reconectar o reintentar.
+El lobby ofrece invitar amigos conectados, con ACEPTAR/RECHAZAR. Las reglas comprueban amistad mutua, identidad, pertenencia al lobby, dificultad y caducidad. `?sala=CODIGO` comparte la sala. Los listeners y `onDisconnect` se limpian al salir. F5 recupera la cuenta y la sala guardada en la pestaña.
 
-`xpParaSubir(n)=round(80*n^1.35)`, máximo nivel 99. Se suman costes de niveles consecutivos; las reglas validan el nivel exacto para esa XP y prohíben bajar nivel/XP. La subida muestra una pantalla breve. Los mejores por modo/dificultad, partidas, pasillos, precisión (fallos cuentan 0), tiempo, racha, victorias, cooperativas, 30 entradas de bestiario y 12 logros se derivan del resumen de partida. Los no vistos se representan como siluetas. «A tiempo» requiere un acierto con como máximo tres segundos restantes.
+Carrera usa diez rondas sincronizadas. Cooperativo rota Vigía → Bibliotecario → Dibujante por acierto y pausa hasta 15 segundos por desconexión. Los tiempos y la bolsa se comparten por semilla. Una semilla visible permite deducir la secuencia desde código; no se ofrece secreto criptográfico.
 
-**La XP, estadísticas y resultados calculados en el cliente pueden falsificarse.** El límite y los recibos no demuestran que alguien jugó. Como opción avanzada, una Cloud Function debe calcular el resumen desde eventos de partida validados por el servidor y confirmar dibujos/tiempos; después debe bloquearse la actualización directa de XP. `functions/VALIDACION-AVANZADA.md` explica el contrato y los puntos de integración. Las Functions incluidas administran identidad/social/borrado; no se presentan como verificación autoritativa de la IA.
-
-## Amigos y salas
-
-Añadir por `@nombre` (sin distinguir mayúsculas) o por `?amigo=CODIGO`. El código recibido sin sesión permanece hasta el acceso. Máximo 100 amigos, 50 solicitudes pendientes en total y 10 envíos por hora. Se puede rechazar, cancelar, eliminar y desactivar nuevas solicitudes. Las funciones escriben los dos extremos en una transacción; los triggers reparan el espejo RTDB con reintentos.
-
-En el lobby, «Invitar amigos» muestra los conectados y envía una notificación con ACEPTAR/RECHAZAR. RTDB comprueba amistad mutua, emisor, sala y caducidad. `?sala=CODIGO` comparte una sala. Los listeners se limpian al salir y al cerrar sesión. F5 recupera la cuenta y la sala guardada en la pestaña.
-
-Carrera sincroniza tiempos y resultados, con 10 rondas. Cooperativo mantiene Vigía/Bibliotecario/Dibujante y rotación por acierto; una desconexión pausa hasta 15 segundos. La bolsa de monstruos es común por semilla: en cooperativo los otros roles no ven el flash, pero una semilla visible permite deducir la secuencia desde código; no se afirma secreto criptográfico en este diseño solicitado.
+Sin tarea programada, la limpieza ocurre en el navegador: se descarta la invitación caducada al escuchar la bandeja; al conectarse se revisan hasta ocho entradas del índice de salas y las reglas solo permiten borrar las realmente caducadas. Los datos caducados pueden permanecer mientras nadie usa el juego.
 
 ## Dificultades y bolsa
 
@@ -130,14 +132,19 @@ Máximo tres fuentes locales WOFF2: **Pirata One** (gótico legible para título
 
 ## App Check
 
-Recomendado para reducir solicitudes automatizadas: registra la web en Firebase App Check, configura reCAPTCHA para tu dominio y activa el cliente con tu clave pública en `APP_CHECK.siteKey` de `js/config.js`. Comprueba las métricas antes de exigirlo. Para las callables, `ENFORCE_APP_CHECK=true` en las variables de despliegue activa su validación; activa también la exigencia en Firestore y Realtime Database desde la consola. App Check no sustituye reglas ni validación de partidas. [Guía oficial](https://firebase.google.com/docs/app-check/web/recaptcha-provider).
+Puedes registrar tu web en App Check y configurar reCAPTCHA en `APP_CHECK.siteKey`. Comprueba las métricas antes de exigirlo en Realtime Database. App Check complementa las reglas. [Guía oficial](https://firebase.google.com/docs/app-check/web/recaptcha-provider).
 
 ## Pruebas
 
 ```sh
+npm install
+npx playwright install chromium
 npm test
 npm run test:rules
 npm run test:expansion
+npm run test:spark
+# Solo para verificar la migración desde la base antigua:
+npm run test:migration
 ```
 
-`npm test`: catálogo/lore/sonidos/imágenes, dificultades, puntuación, XP, nombres y 64 semillas × 300 encuentros. `test:rules`: creación atómica, invariantes, identidad, límites, espejo social, invitaciones y borrado con emuladores. `test:expansion`: navegador y SDK reales contra emuladores, doble de IA explícito. Instala el navegador de Playwright con `npx playwright install chromium` si falta. Ver `PRUEBAS.md` para cobertura y verificaciones manuales pendientes. Ninguna prueba escribe en tu Firebase real.
+Las pruebas usan solo proyectos `demo-pasillo` y emuladores locales de Auth/RTDB, sin tu Firebase real. El navegador usa el SDK real; únicamente CLIP devuelve etiquetas controladas. Los resultados y límites de validación están en `PRUEBAS.md` y `PRUEBAS-RESULTADOS.json`. Los 30 retratos, sonidos, avatares originales y fuentes se verifican también por catálogo, formato y hashes.

@@ -1,5 +1,5 @@
-import { DEFAULT_OPTIONS } from './config.js?v=1.3.0';
-import {currentUser} from './auth.js?v=1.3.0';
+import { DEFAULT_OPTIONS } from './config.js?v=1.3.1';
+import {currentUser} from './auth.js?v=1.3.1';
 const KEY = 'pasillo-infinito-v1';
 let data = { options: { ...DEFAULT_OPTIONS }, scores: [] }, persistent = true;
 try {

@@ -4,21 +4,20 @@ const primary=process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES||runtime;
 const {chromium}=require(primary+'/playwright'),sharp=require(primary+'/sharp'),esbuild=require(runtime+'/esbuild');
 const executable=path.join(workspace,'browser-bin/chromium');let args=[];try{args=require(runtime+'/@sparticuz/chromium').args.filter(arg=>arg!=='--single-process');}catch{}
 const browserOptions={headless:true,...(fs.existsSync(executable)?{executablePath:executable}:{}),args};
-const errors=[],checks=[],shots=path.join(workspace,'qa-ajustes');fs.mkdirSync(shots,{recursive:true});
-const bundle=esbuild.buildSync({stdin:{contents:"export * as app from 'firebase/app';export * as auth from 'firebase/auth';export * as db from 'firebase/database';export * as store from 'firebase/firestore';export * as fn from 'firebase/functions';",resolveDir:runtime},bundle:true,format:'esm',write:false}).outputFiles[0].text;
+const forbiddenServices=[],errors=[],checks=[],shots=path.join(workspace,'qa-ajustes');fs.mkdirSync(shots,{recursive:true});
+const bundle=esbuild.buildSync({stdin:{contents:"export * as app from 'firebase/app';export * as auth from 'firebase/auth';export * as db from 'firebase/database';",resolveDir:runtime},bundle:true,format:'esm',write:false}).outputFiles[0].text;
 const server=http.createServer((req,res)=>{
   if(req.url==='/qa/firebase.js'){res.setHeader('Content-Type','text/javascript');res.end(bundle);return;}
   const file=path.join(root,decodeURIComponent(new URL(req.url,'http://localhost').pathname==='/'?'index.html':new URL(req.url,'http://localhost').pathname));
   try{res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png','.wav':'audio/wav','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.statusCode=404;res.end('404');}
 });
 async function sdkRoutes(context){
+ context.on('request',request=>{if(/firebase-functions|firebase-firestore|cloudfunctions\.net|firestore\.googleapis/.test(request.url()))forbiddenServices.push(request.url());});
  await context.route('https://www.gstatic.com/firebasejs/10.14.1/*',route=>{
   const name=route.request().url().split('/').pop();let body='';
   if(name==='firebase-app.js')body="import {app} from '/qa/firebase.js';export const getApps=app.getApps;export const initializeApp=config=>app.initializeApp({...config,projectId:'demo-pasillo',databaseURL:'https://demo-pasillo.firebaseio.com'});";
   if(name==='firebase-auth.js')body="import {auth} from '/qa/firebase.js';export const {browserLocalPersistence,setPersistence,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,deleteUser,sendPasswordResetEmail,reauthenticateWithCredential,EmailAuthProvider,updatePassword}=auth;export const getAuth=app=>{const a=auth.getAuth(app);if(!a.__test){auth.connectAuthEmulator(a,'http://127.0.0.1:9099',{disableWarnings:true});a.__test=true;}return a;};";
-  if(name==='firebase-database.js')body="import {db} from '/qa/firebase.js';export const {ref,get,set,update,onValue,onDisconnect,runTransaction,push,serverTimestamp,remove,goOffline,goOnline}=db;export const getDatabase=app=>{const d=db.getDatabase(app);if(!d.__test){db.connectDatabaseEmulator(d,'127.0.0.1',9000);d.__test=true;}return d;};";
-  if(name==='firebase-firestore.js')body="import {store} from '/qa/firebase.js';export const {collection,query,where,documentId,orderBy,limit,getDocs,getDocsFromServer,getDoc,getDocFromServer,doc,setDoc,addDoc,updateDoc,runTransaction,onSnapshot,getCountFromServer,serverTimestamp,disableNetwork,enableNetwork,writeBatch}=store;export const getFirestore=app=>{const f=store.getFirestore(app);if(!f.__test){store.connectFirestoreEmulator(f,'127.0.0.1',8081);f.__test=true;}return f;};";
-  if(name==='firebase-functions.js')body="import {fn} from '/qa/firebase.js';export const {httpsCallable}=fn;export const getFunctions=(app,region)=>{const f=fn.getFunctions(app,region);if(!f.__test){fn.connectFunctionsEmulator(f,'127.0.0.1',5001);f.__test=true;}return f;};";
+  if(name==='firebase-database.js')body="import {db} from '/qa/firebase.js';export const {ref,get,set,update,onValue,onDisconnect,runTransaction,push,serverTimestamp,remove,goOffline,goOnline,query,orderByChild,limitToLast,startAt,equalTo,orderByValue,endAt,limitToFirst}=db;export const getDatabase=app=>{const d=db.getDatabase(app);if(!d.__test){db.connectDatabaseEmulator(d,'127.0.0.1',9000);d.__test=true;}return d;};";
   return route.fulfill({contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'},body:body.replaceAll("from '/qa/","from 'http://127.0.0.1:8002/qa/")});
  });
 }
@@ -44,4 +43,4 @@ async function fonts(page){
  const bad=await page.evaluate(()=>Array.from(document.querySelectorAll('body *')).filter(el=>el.getClientRects().length&&Array.from(el.childNodes).some(n=>n.nodeType===3&&n.textContent.trim())).filter(el=>parseFloat(getComputedStyle(el).fontSize)<16||!/(Pirata One|IM Fell English|Cutive Mono)/.test(getComputedStyle(el).fontFamily)).map(el=>`${el.id||el.tagName}: ${getComputedStyle(el).fontFamily} ${getComputedStyle(el).fontSize}`));assert.deepEqual(bad,[]);assert.equal(await page.evaluate(()=>document.documentElement.dataset.fonts),'ready');
 }
 // Las suites actuales usan este servidor y la IA como doble de prueba; no se altera CLIP del proyecto.
-module.exports={server,setup,state,bg,ink,fonts,shots,checks,errors,runtime,primary,browserOptions};
+module.exports={server,setup,state,bg,ink,fonts,shots,checks,errors,forbiddenServices,runtime,primary,browserOptions};

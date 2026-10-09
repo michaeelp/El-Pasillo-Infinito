@@ -1,6 +1,6 @@
 // Una única tabla configura tiempos y aceptación de IA en Solo, Carrera y Cooperativo.
-import {DIFFICULTIES,DEFAULT_DIFFICULTY,roundDurations} from './config.js?v=1.3.0';
-import {randomFrom,seedNumber} from './pool.js?v=1.3.0';
+import {DIFFICULTIES,DEFAULT_DIFFICULTY,roundDurations} from './config.js?v=1.3.1';
+import {randomFrom,seedNumber} from './pool.js?v=1.3.1';
 export const difficulty = id => DIFFICULTIES[id] || DIFFICULTIES[DEFAULT_DIFFICULTY];
 export {roundDurations};
 // Pesadilla usa la misma cuenta determinista en todos los clientes.

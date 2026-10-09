@@ -1,80 +1,68 @@
-// Genera las reglas completas y los valores compartidos por Functions desde config.js.
-import fs from 'node:fs';
-import {USERNAMES,SOCIAL,XP,AVATAR_COUNT,DIFFICULTIES,FUNCTIONS_REGION,REEMPLAZAR_SOLO_SI_MEJOR} from '../js/config.js';
-const root=new URL('../',import.meta.url),write=(name,s)=>{const path=new URL(name,root);if(process.argv.includes('--check')){if(fs.readFileSync(path,'utf8')!==s)throw new Error(`Regenera ${name}: npm run generate:rules`);}else fs.writeFileSync(path,s);};
-write('functions/settings.json',JSON.stringify({XP,USERNAMES,SOCIAL,DIFFICULTIES,AVATAR_COUNT,FUNCTIONS_REGION,REEMPLAZAR_SOLO_SI_MEJOR},null,2)+'\n');
-let total=0;const thresholds=[];for(let level=1;level<=XP.nivelMax;level++){thresholds.push(total);total+=Math.round(XP.base*level**XP.exponente);}
-const names=USERNAMES.reservados.join('|'),offenses=USERNAMES.ofensivos.join('|');
-const modes=['solo','carrera','coop'];
-let rules=`rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Una sesión anónima no es una cuenta. Los documentos públicos nunca contienen correo.
-    function account() {return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';}
-    function owner(uid) {return account() && request.auth.uid == uid && !exists(/databases/$(database)/documents/accountCleanup/$(uid));}
-    function user(uid) {return get(/databases/$(database)/documents/users/$(uid)).data;}
-    function validName(name) {return name is string && name.matches('^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9_]{3,14}$') && !name.lower().matches('^(${names})$') && !name.lower().matches('.*(${offenses}).*');}
-    function validLevel(xp,nivel) {let limits=${JSON.stringify(thresholds)};return xp is int && xp>=0 && nivel is int && nivel>=1 && nivel<=${XP.nivelMax} && xp>=limits[nivel-1] && (nivel==${XP.nivelMax} || xp<limits[nivel]);}
-    function validStats(s) {return s is map && s.keys().hasAll(['partidas','pasillos','mejores','precisionTotal','precisionMuestras','tiempoMs','rachaMax','carrerasGanadas','cooperativas','bestiario','logros']) && s.keys().hasOnly(['partidas','pasillos','mejores','precisionTotal','precisionMuestras','tiempoMs','rachaMax','carrerasGanadas','cooperativas','bestiario','logros']) && s.partidas is int && s.partidas>=0 && s.pasillos is int && s.pasillos>=0 && s.precisionTotal is int && s.precisionTotal>=0 && s.precisionMuestras is int && s.precisionMuestras>=0 && s.tiempoMs is int && s.tiempoMs>=0 && s.rachaMax is int && s.rachaMax>=0 && s.carrerasGanadas is int && s.carrerasGanadas>=0 && s.cooperativas is int && s.cooperativas>=0 && s.mejores is map && s.bestiario is map && s.bestiario.size()<=30 && s.logros is list && s.logros.size()<=12;}
-    function shape(p) {return p.keys().hasAll(['nombre','nombreLower','avatar','xp','nivel','codigoAmigo','creadoEn','estadisticas','preferencias','ultimaPartida']) && p.keys().hasOnly(['nombre','nombreLower','avatar','xp','nivel','codigoAmigo','creadoEn','estadisticas','preferencias','ultimaPartida']) && validName(p.nombre) && p.nombreLower==p.nombre.lower() && p.avatar is int && p.avatar>=1 && p.avatar<=${AVATAR_COUNT} && validLevel(p.xp,p.nivel) && p.codigoAmigo is string && p.codigoAmigo.matches('^[A-Z2-9]{6}$') && p.creadoEn is timestamp && validStats(p.estadisticas) && p.preferencias.keys().hasOnly(['solicitudes']) && p.preferencias.solicitudes is bool && p.ultimaPartida is string;}
-    // getAfter exige las tres reservas en el mismo commit; no hay nombres sueltos.
-    match /usernames/{name} {
-      allow read: if account();
-      allow create: if owner(request.resource.data.uid) && request.resource.data.keys().hasOnly(['uid']) && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.nombreLower==name;
-      allow update,delete: if false;
-    }
-    match /friendcodes/{code} {
-      allow read: if account();
-      allow create: if owner(request.resource.data.uid) && request.resource.data.keys().hasOnly(['uid']) && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.codigoAmigo==code;
-      allow update,delete: if false;
-    }
-    match /users/{uid} {
-      allow read: if account();
-      allow create: if owner(uid) && shape(request.resource.data) && request.resource.data.xp==0 && request.resource.data.nivel==1 && request.resource.data.creadoEn==request.time && request.resource.data.estadisticas.partidas==0 && request.resource.data.estadisticas.pasillos==0 && request.resource.data.ultimaPartida=='' && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.nombreLower)).data.uid==uid && getAfter(/databases/$(database)/documents/friendcodes/$(request.resource.data.codigoAmigo)).data.uid==uid;
-      // Identidad inmutable. Avatar y preferencias son las únicas ediciones libres.
-      allow update: if owner(uid) && shape(request.resource.data) && request.resource.data.nombre==resource.data.nombre && request.resource.data.nombreLower==resource.data.nombreLower && request.resource.data.codigoAmigo==resource.data.codigoAmigo && request.resource.data.creadoEn==resource.data.creadoEn && request.resource.data.xp>=resource.data.xp && request.resource.data.nivel>=resource.data.nivel && (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatar','preferencias']) || validMatch(uid)
-      );
-      allow delete: if false; // La callable elimina ambos extremos, registros y Auth con reintentos.
-      function validMatch(uid) {
-        let id=request.resource.data.ultimaPartida;
-        let receipt=getAfter(/databases/$(database)/documents/users/$(uid)/partidas/$(id)).data;
-        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['xp','nivel','estadisticas','ultimaPartida']) && id!=resource.data.ultimaPartida && !exists(/databases/$(database)/documents/users/$(uid)/partidas/$(id)) && receipt.fecha==request.time && receipt.xp==request.resource.data.xp-resource.data.xp && receipt.xp<=${XP.maxPartida} && request.resource.data.estadisticas.partidas==resource.data.estadisticas.partidas+1 && request.resource.data.estadisticas.pasillos>=resource.data.estadisticas.pasillos && request.resource.data.estadisticas.tiempoMs>=resource.data.estadisticas.tiempoMs;
-      }
-      match /partidas/{id} {
-        allow read: if owner(uid);
-        allow create: if owner(uid) && request.resource.data.keys().hasAll(['xp','fecha','modo','dificultad']) && request.resource.data.keys().hasOnly(['xp','fecha','modo','dificultad']) && request.resource.data.xp is int && request.resource.data.xp>=0 && request.resource.data.xp<=${XP.maxPartida} && request.resource.data.fecha==request.time && request.resource.data.modo in ['solo','race','coop'] && request.resource.data.dificultad in ['facil','normal','dificil','pesadilla'] && getAfter(/databases/$(database)/documents/users/$(uid)).data.ultimaPartida==id && getAfter(/databases/$(database)/documents/users/$(uid)).data.xp==user(uid).xp+request.resource.data.xp;
-        allow update,delete: if false;
-      }
-      match /amigos/{otherUid} {
-        allow read: if owner(uid);
-        allow write: if false; // socialAction valida estados, límites y escribe ambos extremos.
-      }
-    }
-    function record(p,uid,d,max) {return owner(uid) && p.keys().hasAll(['uid','nombre','avatar','nivel','puntuacion','fecha','dificultad']) && p.keys().hasOnly(['uid','nombre','avatar','nivel','puntuacion','fecha','dificultad']) && p.uid==uid && p.nombre==user(uid).nombre && p.avatar==user(uid).avatar && p.nivel==user(uid).nivel && p.puntuacion is int && p.puntuacion>=1 && p.puntuacion<=max && p.fecha==request.time && p.dificultad==d;}
-`;
-for(const mode of modes)for(const d of Object.keys(DIFFICULTIES)){
- if(mode==='coop')rules+=`    // Hash SHA-256 calculado por publishCoopRecord; miembros ordenados, dueño = menor uid.
-    match /records_coop_${d}/{idEquipo} {
-      allow read: if true;
-      allow write: if false; // Admin únicamente; la callable comprueba la sala, el equipo y la identidad.
-    }
-`;
- else rules+=`    match /records_${mode}_${d}/{uid} {
-      allow read: if true;
-      allow create: if record(request.resource.data,uid,'${d}',${mode==='solo'?10000:50000});
-      allow update: if record(request.resource.data,uid,'${d}',${mode==='solo'?10000:50000})${REEMPLAZAR_SOLO_SI_MEJOR?' && request.resource.data.puntuacion>=resource.data.puntuacion':''};
-      allow delete: if false;
-    }
-`;
-}
-rules+=`    match /{document=**} {allow read,write: if false;}
+// Reglas de cuentas para Spark: una sola base valida perfil, reservas, social y récords.
+import {USERNAMES,SOCIAL,XP,AVATAR_COUNT,DIFFICULTIES,REEMPLAZAR_SOLO_SI_MEJOR} from '../js/config.js';
+export const account="auth != null && auth.token.firebase.sign_in_provider != 'anonymous'";
+export const signed=`${account} && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()`;
+const future="newData.parent().parent()";
+const own=`${account} && auth.uid == $uid`;
+const cleaning="root.child('accountCleanup').child(auth.uid).exists()";
+const integer=(value,min=0,max=1e12)=>`${value}.isNumber() && ${value}.val() % 1 == 0 && ${value}.val() >= ${min} && ${value}.val() <= ${max}`;
+const bool={'.validate':'newData.isBoolean()'};
+const forbidden={'.validate':false};
+export function accountRules(){
+ const out={};let total=0;const levels=[];
+ for(let n=1;n<=XP.nivelMax;n++){const next=total+Math.round(XP.base*n**XP.exponente);levels.push(`(newData.child('nivel').val() == ${n} && newData.child('xp').val() >= ${total}${n<XP.nivelMax?` && newData.child('xp').val() < ${next}`:''})`);total=next;}
+ const receipt=`${future}.child('partidas').child($uid).child(newData.child('ultimaPartida').val())`;
+ const newMatch=`newData.child('ultimaPartida').val() != data.child('ultimaPartida').val() && !root.child('partidas').child($uid).child(newData.child('ultimaPartida').val()).exists() && ${receipt}.child('fecha').val() == now && ${receipt}.child('xp').val() == newData.child('xp').val() - data.child('xp').val() && ${receipt}.child('xp').val() >= 0 && ${receipt}.child('xp').val() <= ${XP.maxPartida} && newData.child('estadisticas/partidas').val() == data.child('estadisticas/partidas').val() + 1`;
+ const statsFields=['partidas','pasillos','precisionTotal','precisionMuestras','tiempoMs','rachaMax','carrerasGanadas','cooperativas'];
+ const profileShape="newData.hasChildren(['nombre','nombreLower','avatar','xp','nivel','codigoAmigo','creadoEn','estadisticas','preferencias','ultimaPartida'])";
+ const identity="newData.child('nombre').val() == data.child('nombre').val() && newData.child('nombreLower').val() == data.child('nombreLower').val() && newData.child('codigoAmigo').val() == data.child('codigoAmigo').val() && newData.child('creadoEn').val() == data.child('creadoEn').val()";
+ const initialStats=statsFields.map(k=>`newData.child('estadisticas/${k}').val() == 0`).join(' && ')+" && !newData.child('estadisticas/mejores').exists() && !newData.child('estadisticas/bestiario').exists() && !newData.child('estadisticas/logros').exists()";
+ const reserves=`${future}.child('usernames').child(newData.child('nombreLower').val()).val() == $uid && ${future}.child('friendcodes').child(newData.child('codigoAmigo').val()).val() == $uid`;
+ const marker="root.child('accountCleanup').child($uid)";
+ const recordPaths=['solo','carrera'].flatMap(mode=>Object.keys(DIFFICULTIES).map(d=>`!${future}.child('records_${mode}_${d}').child($uid).exists()`)).join(' && ');
+ const deletion=`!newData.exists() && ${future}.child('deletedAccounts').child($uid).val() == true && ${marker}.exists() && !${future}.child('usernames').child(data.child('nombreLower').val()).exists() && !${future}.child('friendcodes').child(data.child('codigoAmigo').val()).exists() && !${future}.child('partidas').child($uid).exists() && !${future}.child('social').child($uid).exists() && !${future}.child('socialCounts').child($uid).exists() && !${future}.child('socialLimits').child($uid).exists() && !${future}.child('equipos').child($uid).exists() && !${future}.child('salasJugador').child($uid).exists() && !${future}.child('invitaciones').child($uid).exists() && !${future}.child('enviadas').child($uid).exists() && ${recordPaths}`;
+ out.users={$uid:{'.read':account,'.write':`${own} && ((!root.child('accountCleanup').child($uid).exists() && !root.child('deletedAccounts').child($uid).exists() && newData.exists()) || (${deletion}))`,'.validate':`${profileShape} && (${levels.join(' || ')}) && ${reserves} && (!data.exists() ? (newData.child('xp').val() == 0 && newData.child('nivel').val() == 1 && newData.child('creadoEn').val() == now && newData.child('ultimaPartida').val() == '' && ${initialStats} && ${future}.child('socialCounts').child($uid).child('accion').val() == 'crear') : (${identity} && newData.child('xp').val() >= data.child('xp').val() && (newData.child('ultimaPartida').val() == data.child('ultimaPartida').val() ? newData.child('xp').val() == data.child('xp').val() : (${newMatch}))))`,
+ nombre:{'.validate':`newData.isString() && newData.val().matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9_]{3,14}$/) && !newData.val().toLowerCase().matches(/^(${USERNAMES.reservados.join('|')})$/) && !newData.val().toLowerCase().matches(/.*(${USERNAMES.ofensivos.join('|')}).*/)`},
+ nombreLower:{'.validate':"newData.val() == newData.parent().child('nombre').val().toLowerCase()"},avatar:{'.validate':integer('newData',1,AVATAR_COUNT)},xp:{'.validate':integer('newData')},nivel:{'.validate':integer('newData',1,XP.nivelMax)},codigoAmigo:{'.validate':"newData.isString() && newData.val().matches(/^[A-Z2-9]{6}$/)"},creadoEn:{'.validate':integer('newData',0,1e15)},ultimaPartida:{'.validate':"newData.isString() && (newData.val() == '' || newData.val().matches(/^[A-Za-z0-9_-]{1,128}$/))"},preferencias:{'.validate':"newData.hasChildren(['solicitudes'])",solicitudes:bool,$other:forbidden},$other:forbidden}};
+ const stats=out.users.$uid.estadisticas={'.validate':`newData.hasChildren(${JSON.stringify(statsFields)})`,$other:forbidden};
+ const statsMatch="newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val()";
+ for(const k of statsFields)stats[k]={'.validate':`${integer('newData')} && (!data.exists() || newData.val() == data.val() || (${statsMatch} && newData.val() >= data.val()))`};
+ stats.mejores={$key:{'.validate':`${integer('newData',0,50000)} && $key.matches(/^(solo|race|coop)_(facil|normal|dificil|pesadilla)$/) && (!data.exists() || newData.val() >= data.val())`}};
+ stats.bestiario={$id:{'.validate':"$id.matches(/^([1-9]|[12][0-9]|30)$/) && newData.hasChildren(['vistos','vencidos']) && newData.child('vencidos').val() <= newData.child('vistos').val()",vistos:{'.validate':integer('newData')},vencidos:{'.validate':integer('newData')},$other:forbidden}};
+ stats.logros={$i:{'.validate':"$i.matches(/^([0-9]|1[01])$/) && newData.isString() && newData.val().matches(/^(primera|diez|cincuenta|carrera|margen|treinta|vistos|racha|coop|precision|pesadilla|veterano)$/)"}};
+ for(const [branch,field,key]of [['usernames','nombreLower','$name'],['friendcodes','codigoAmigo','$code']]){
+  out[branch]={[key]:{'.read':account,'.write':`${account} && ((!data.exists() && newData.val() == auth.uid && ${future}.child('users').child(auth.uid).child('${field}').val() == ${key}) || (!newData.exists() && data.val() == auth.uid && ${cleaning} && !${future}.child('users').child(auth.uid).exists()))`,'.validate':"newData.isString() && newData.val() == auth.uid"}};
+ }
+ out.partidas={$uid:{'.read':own,'.write':`${own} && ${marker}.exists() && !newData.exists()`,$id:{'.write':`${own} && !${marker}.exists() && !data.exists() && newData.exists()`,'.validate':`newData.hasChildren(['xp','fecha','modo','dificultad']) && newData.parent().parent().parent().child('users').child($uid).child('ultimaPartida').val() == $id && newData.parent().parent().parent().child('users').child($uid).child('xp').val() == root.child('users').child($uid).child('xp').val() + newData.child('xp').val()`,xp:{'.validate':integer('newData',0,XP.maxPartida)},fecha:{'.validate':'newData.val() == now'},modo:{'.validate':"newData.val() == 'solo' || newData.val() == 'race' || newData.val() == 'coop'"},dificultad:{'.validate':"newData.val().matches(/^(facil|normal|dificil|pesadilla)$/)"},$other:forbidden}}};
+ out.accountCleanup={$uid:{'.read':own,'.write':`${own} && ((!data.exists() && newData.exists() && root.child('users').child($uid).exists()) || (!newData.exists() && !root.child('users').child($uid).exists() && !root.child('usernames').child(data.child('nombreLower').val()).exists() && !root.child('friendcodes').child(data.child('codigoAmigo').val()).exists()))`,'.validate':"newData.hasChildren(['nombreLower','codigoAmigo','inicio'])",nombreLower:{'.validate':"newData.val() == root.child('users').child($uid).child('nombreLower').val()"},codigoAmigo:{'.validate':"newData.val() == root.child('users').child($uid).child('codigoAmigo').val()"},inicio:{'.validate':'newData.val() == now'},$other:forbidden}};
+ out.deletedAccounts={$uid:{'.read':own,'.write':`${own} && !data.exists() && newData.val() == true && ${marker}.exists() && !${future}.child('users').child($uid).exists()`,'.validate':'newData.val() == true'}};
+ // Los contadores solo cambian junto a UNA transición concreta y su contraparte.
+ const countRoot="newData.parent().parent()",other="newData.child('otroUid').val()",peerCount=`${countRoot}.child('socialCounts').child(${other})`;
+ const oldPending=`root.child('social').child($uid).child('pendientes').child(${other})`,oldFriend=`root.child('social').child($uid).child('confirmados').child(${other})`;
+ const nextPending=`${countRoot}.child('social').child($uid).child('pendientes').child(${other})`,nextFriend=`${countRoot}.child('social').child($uid).child('confirmados').child(${other})`;
+ const a="newData.child('accion').val()",f="newData.child('amigos').val()",p="newData.child('pendientes').val()",of="data.child('amigos').val()",op="data.child('pendientes').val()";
+ const normalCount=`${peerCount}.child('fecha').val() == now && ${peerCount}.child('otroUid').val() == $uid && ${peerCount}.child('accion').val() == ${a} && ((${a} == 'enviar' && !${oldPending}.exists() && !${oldFriend}.exists() && ${nextPending}.child('fecha').val() == now && ${f} == ${of} && ${p} == ${op} + 1) || (${a} == 'aceptar' && ${oldPending}.exists() && ${nextFriend}.val() == true && !${nextPending}.exists() && ${f} == ${of} + 1 && ${p} == ${op} - 1) || ((${a} == 'rechazar' || ${a} == 'cancelar') && ${oldPending}.exists() && !${nextPending}.exists() && !${nextFriend}.exists() && ${f} == ${of} && ${p} == ${op} - 1) || (${a} == 'eliminar' && ${oldFriend}.val() == true && !${nextFriend}.exists() && ${f} == ${of} - 1 && ${p} == ${op}))`;
+ const cleanupCount=`${a} == 'limpiar' && ${other} == auth.uid && ${cleaning} && !${nextPending}.exists() && !${nextFriend}.exists() && ${f} == ${of} - (${oldFriend}.exists() ? 1 : 0) && ${p} == ${op} - (${oldPending}.exists() ? 1 : 0) && (${oldFriend}.exists() || ${oldPending}.exists())`;
+ out.socialCounts={$uid:{'.read':account,'.write':`${account} && ((newData.exists() && (auth.uid == $uid || newData.child('otroUid').val() == auth.uid)) || (!newData.exists() && auth.uid == $uid && ${cleaning}))`,'.validate':`newData.hasChildren(['amigos','pendientes','otroUid','accion','fecha']) && newData.child('fecha').val() == now && (!data.exists() ? (${a} == 'crear' && auth.uid == $uid && ${f} == 0 && ${p} == 0 && ${other} == '' && ${countRoot}.child('users').child($uid).child('creadoEn').val() == now) : ((${normalCount}) || (${cleanupCount})))`,amigos:{'.validate':integer('newData',0,SOCIAL.amigosMax)},pendientes:{'.validate':integer('newData',0,SOCIAL.pendientesMax)},otroUid:{'.validate':'newData.isString()'},accion:{'.validate':'newData.isString()'},fecha:{'.validate':'newData.val() == now'},$other:forbidden}};
+ const pairRoot="newData.parent().parent().parent().parent()",peerPending=`${pairRoot}.child('social').child($other).child('pendientes').child($uid)`,peerFriend=`${pairRoot}.child('social').child($other).child('confirmados').child($uid)`,counter=`${pairRoot}.child('socialCounts').child($uid)`;
+ const changedCounts=`${counter}.child('otroUid').val() == $other && ${counter}.child('fecha').val() == now`;
+ const pairCleanup=`${cleaning} && (auth.uid == $uid || auth.uid == $other) && !newData.exists() && !${peerPending}.exists() && !${peerFriend}.exists() && (auth.uid == $uid ? !${counter}.exists() : ${counter}.child('accion').val() == 'limpiar' && ${counter}.child('fecha').val() == now && ${counter}.child('otroUid').val() == auth.uid)`;
+ const oldPair="root.child('social').child($uid).child('pendientes').child($other)";
+ out.social={$uid:{'.read':own,pendientes:{$other:{'.write':`${account} && $uid != $other && ((${pairCleanup}) || (${signed} && (auth.uid == $uid || auth.uid == $other) && ${changedCounts} && ((!data.exists() && newData.exists() && newData.child('de').val() == auth.uid && !root.child('social').child($uid).child('confirmados').child($other).exists() && root.child('socialCounts').child($uid).child('amigos').val() < ${SOCIAL.amigosMax} && root.child('socialCounts').child($other).child('amigos').val() < ${SOCIAL.amigosMax} && root.child('users').child(auth.uid == $uid ? $other : $uid).child('preferencias/solicitudes').val() == true && !root.child('accountCleanup').child($other).exists() && ${counter}.child('accion').val() == 'enviar') || (data.exists() && !newData.exists() && !${peerPending}.exists() && (${counter}.child('accion').val() == 'aceptar' ? (data.child('de').val() != auth.uid && ${peerFriend}.val() == true) : (${counter}.child('accion').val() == 'cancelar' ? data.child('de').val() == auth.uid : ${counter}.child('accion').val() == 'rechazar' && data.child('de').val() != auth.uid))))))`,'.validate':`newData.hasChildren(['de','fecha','slot']) && newData.child('de').val() == auth.uid && newData.child('fecha').val() == now && ${peerPending}.child('de').val() == auth.uid && ${peerPending}.child('fecha').val() == now && ${peerPending}.child('slot').val() == newData.child('slot').val() && ${pairRoot}.child('socialLimits').child(auth.uid).child(newData.child('slot').val()+'').child('t').val() == now && ${pairRoot}.child('socialLimits').child(auth.uid).child(newData.child('slot').val()+'').child('dest').val() == (auth.uid == $uid ? $other : $uid)`,de:{'.validate':'newData.isString()'},fecha:{'.validate':'newData.val() == now'},slot:{'.validate':integer('newData',0,SOCIAL.solicitudesHora-1)},$extra:forbidden}},confirmados:{$other:{'.write':`${account} && $uid != $other && ((${pairCleanup}) || (${signed} && (auth.uid == $uid || auth.uid == $other) && ${changedCounts} && ((!data.exists() && newData.val() == true && ${counter}.child('accion').val() == 'aceptar' && ${oldPair}.exists() && ${oldPair}.child('de').val() != auth.uid && ${peerFriend}.val() == true && !${peerPending}.exists() && !${pairRoot}.child('social').child($uid).child('pendientes').child($other).exists()) || (data.val() == true && !newData.exists() && ${counter}.child('accion').val() == 'eliminar' && !${peerFriend}.exists()))))`,'.validate':'newData.val() == true'}},$extra:forbidden}};
+ out.socialLimits={$uid:{'.read':own,'.write':`${own} && ${marker}.exists() && !newData.exists()`,$slot:{'.write':`${signed} && auth.uid == $uid && (!data.exists() || data.child('t').val() <= now - 3600000)`,'.validate':`$slot.matches(/^([0-9])$/) && newData.hasChildren(['t','dest']) && newData.child('t').val() == now && newData.parent().parent().parent().child('social').child($uid).child('pendientes').child(newData.child('dest').val()).child('fecha').val() == now && !root.child('social').child($uid).child('pendientes').child(newData.child('dest').val()).exists()`,t:{'.validate':'newData.val() == now'},dest:{'.validate':'newData.isString()'},$other:forbidden}}};
+ for(const mode of ['solo','carrera','coop'])for(const d of Object.keys(DIFFICULTIES)){
+  const category=`records_${mode}_${d}`,team=mode==='coop',uid=team?"newData.child('uid').val()":"$id",u=`root.child('users').child(${uid})`,memberCheck=team?"(auth.uid == data.child('miembros/0').val() || auth.uid == data.child('miembros/1').val() || auth.uid == data.child('miembros/2').val())":"auth.uid == $id";
+  const valueRule=`newData.hasChildren(${JSON.stringify(['uid','nombre','avatar','nivel','puntuacion','fecha','dificultad',...(team?['miembros','sala','partida']:[])])}) && newData.child('uid').val() == ${uid} && newData.child('nombre').val() == ${u}.child('nombre').val() && newData.child('avatar').val() == ${u}.child('avatar').val() && newData.child('nivel').val() == ${u}.child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == '${d}'${REEMPLAZAR_SOLO_SI_MEJOR?" && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())":''}`;
+  const node=out[category]={'.read':true,'.indexOn':['puntuacion'],$id:{'.write':`((${signed}) && newData.exists() && ${team?"(auth.uid == newData.child('miembros/0').val() || auth.uid == newData.child('miembros/1').val() || auth.uid == newData.child('miembros/2').val())":"auth.uid == $id"}) || (${account} && !newData.exists() && ${cleaning} && (${memberCheck}${!team?" || !data.exists() && auth.uid == $id":''}))`,'.validate':valueRule,uid:{'.validate':'newData.isString()'},nombre:{'.validate':'newData.isString()'},avatar:{'.validate':integer('newData',1,AVATAR_COUNT)},nivel:{'.validate':integer('newData',1,XP.nivelMax)},puntuacion:{'.validate':integer('newData',1,mode==='carrera'?50000:10000)},fecha:{'.validate':'newData.val() == now'},dificultad:{'.validate':`newData.val() == '${d}'`},$other:forbidden}};
+  if(team){
+   const n=node.$id,room="root.child('rooms').child(newData.child('sala').val())",members="newData.child('miembros')",indices="newData.parent().parent().child('equipos')";
+   n['.validate']+=` && newData.child('uid').val() == ${members}.child('0').val() && $id == ${members}.child('0').val() + '|' + ${members}.child('1').val() + '|' + ${members}.child('2').val() && ${members}.child('0').val() < ${members}.child('1').val() && ${members}.child('1').val() < ${members}.child('2').val() && ${room}.child('meta/modo').val() == 'coop' && ${room}.child('meta/estado').val() == 'podium' && ${room}.child('meta/personalizada').val() == false && ${room}.child('meta/dificultad').val() == '${d}' && ${room}.child('meta/match').val() == newData.child('partida').val() && ${room}.child('meta/pasillos').val() == newData.child('puntuacion').val()`;
+   for(const i of [0,1,2])n['.validate']+=` && ${room}.child('jugadores').child(${members}.child('${i}').val()).exists() && ${indices}.child(${members}.child('${i}').val()).child('${d}').child($id).val() == true`;
+   n.miembros={'.validate':"newData.hasChildren(['0','1','2'])",0:{'.validate':'newData.isString()'},1:{'.validate':'newData.isString()'},2:{'.validate':'newData.isString()'},$other:forbidden};n.sala={'.validate':"newData.isString() && newData.val().matches(/^[A-Z]{4}$/)"};n.partida={'.validate':integer('newData',0,1e15)};
   }
+ }
+ const indexRecord="newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id)",existingRecord="root.child('records_coop_' + $d).child($id)",indexMember=`(auth.uid == ${existingRecord}.child('miembros/0').val() || auth.uid == ${existingRecord}.child('miembros/1').val() || auth.uid == ${existingRecord}.child('miembros/2').val())`;
+ out.equipos={$uid:{'.read':account,$d:{$id:{'.write':`${account} && ((newData.val() == true && ${indexRecord}.exists() && (auth.uid == ${indexRecord}.child('miembros/0').val() || auth.uid == ${indexRecord}.child('miembros/1').val() || auth.uid == ${indexRecord}.child('miembros/2').val()) && ($uid == ${indexRecord}.child('miembros/0').val() || $uid == ${indexRecord}.child('miembros/1').val() || $uid == ${indexRecord}.child('miembros/2').val())) || (!newData.exists() && ${cleaning} && ((${indexMember} && !${indexRecord}.exists()) || auth.uid == $uid && !${existingRecord}.exists())))`,'.validate':"$d.matches(/^(facil|normal|dificil|pesadilla)$/) && newData.val() == true"}}}};
+ out.salasJugador={$uid:{'.read':own,$code:{'.write':`${own} && ((!newData.exists()) || (newData.val() == true && root.child('rooms').child($code).child('jugadores').child($uid).exists()))`,'.validate':"$code.matches(/^[A-Z]{4}$/) && newData.val() == true"}}};
+ return out;
 }
-`;
-write('firestore.rules',rules);
-const indexes=[];
-for(const d of Object.keys(DIFFICULTIES))indexes.push({collectionGroup:`records_coop_${d}`,queryScope:'COLLECTION',fields:[{fieldPath:'miembros',arrayConfig:'CONTAINS'},{fieldPath:'puntuacion',order:'DESCENDING'}]});
-for(const mode of ['solo','carrera'])for(const d of Object.keys(DIFFICULTIES))indexes.push({collectionGroup:`records_${mode}_${d}`,queryScope:'COLLECTION',fields:[{fieldPath:'puntuacion',order:'DESCENDING'},{fieldPath:'__name__',order:'ASCENDING'}]});
-write('firestore.indexes.json',JSON.stringify({indexes,fieldOverrides:[]},null,2)+'\n');
-console.log('Reglas de cuentas, recibos de XP, 12 listas e índices actualizados.');

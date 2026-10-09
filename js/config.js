@@ -8,7 +8,7 @@ export const FIREBASE_CONFIG = {
   appId: '1:274953472552:web:4bec7187bb8407abbf831d',
   measurementId: 'G-74BM1JDTLW'
 };
-export const VERSION = '1.3.0';
+export const VERSION = '1.3.1';
 export const AVATAR_COUNT = 12;
 // Tiempos en segundos; Fácil conserva siempre sus valores.
 export const DIFFICULTIES = {
@@ -19,7 +19,6 @@ export const DIFFICULTIES = {
 };
 export const DEFAULT_DIFFICULTY = 'normal';
 export const REEMPLAZAR_SOLO_SI_MEJOR = true;
-export const FUNCTIONS_REGION = 'us-central1';
 // Clave pública de reCAPTCHA v3; vacío mantiene App Check sin activar.
 export const APP_CHECK = {siteKey:''};
 // npm run generate:rules copia estos límites a las reglas y las funciones.

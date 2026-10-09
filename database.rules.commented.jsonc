@@ -1,22 +1,22 @@
-// RTDB 1.3.0: mismo contenido que database.rules.json, con comentarios.
+// RTDB 1.3.1: mismo contenido que database.rules.json, con comentarios.
 {
   "rules": {
     ".read": false,
     ".write": false,
-    // Salas: cuenta no anónima, anfitrión, identidad propia, claims, tiempos y campos acotados.
+    // Salas: cuenta no anónima, anfitrión, identidad propia, claims y tiempos.
     "rooms": {
       ".indexOn": [
         "meta/expiresAt"
       ],
       "$code": {
-        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && !newData.exists() && data.child('meta/expiresAt').isNumber() && data.child('meta/expiresAt').val() < now",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && ((data.child('meta/expiresAt').isNumber() && data.child('meta/expiresAt').val() < now) || (root.child('accountCleanup').child(auth.uid).exists() && data.child('jugadores').child(auth.uid).exists()))",
         ".validate": "newData.child('meta/expiresAt').val() > now",
         "meta": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && (!data.exists() || data.child('expiresAt').val() > now)",
-          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && ((!data.exists() && newData.child('host').val() == auth.uid && newData.child('estado').val() == 'lobby') || (data.child('expiresAt').val() > now && data.child('host').val() == auth.uid))",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (!data.exists() || data.child('expiresAt').val() > now)",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && ((!data.exists() && newData.child('host').val() == auth.uid && newData.child('estado').val() == 'lobby') || (data.child('expiresAt').val() > now && data.child('host').val() == auth.uid))",
           ".validate": "newData.hasChildren(['host','modo','estado','ronda','pasillos','vidas','inicioFase','semilla','createdAt','expiresAt','uniqueAvatars','dificultad','personalizada'])",
           "host": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && newData.val() == auth.uid && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists() && (!root.child('rooms').child($code).child('jugadores').child(data.val()).exists() || root.child('rooms').child($code).child('jugadores').child(data.val()).child('ausente').val() == true)",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && newData.val() == auth.uid && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists() && (!root.child('rooms').child($code).child('jugadores').child(data.val()).exists() || root.child('rooms').child($code).child('jugadores').child(data.val()).child('ausente').val() == true)",
             ".validate": "newData.isString() && newData.val().length <= 128"
           },
           "modo": {
@@ -112,12 +112,12 @@
           }
         },
         "jugadores": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
           "$uid": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('meta/expiresAt').val() > now && (data.exists() || root.child('rooms').child($code).child('meta/estado').val() == 'lobby')",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && root.child('rooms').child($code).child('meta/expiresAt').val() > now && (data.exists() || root.child('rooms').child($code).child('meta/estado').val() == 'lobby')",
             ".validate": "newData.hasChildren(['slot','nombre','avatar','rol','listo','iaLista','progreso','ausente','changed'])",
             "nombre": {
-              ".validate": "newData.isString() && newData.val() == root.child('cuentas').child($uid).child('nombre').val()"
+              ".validate": "newData.isString() && newData.val() == root.child('users').child($uid).child('nombre').val()"
             },
             "avatar": {
               ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12 && (root.child('rooms').child($code).child('meta/uniqueAvatars').val() == false || root.child('rooms').child($code).child('claims/avatars').child(newData.val()+'').val() == auth.uid)"
@@ -152,10 +152,10 @@
           }
         },
         "claims": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
           "$type": {
             "$id": {
-              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('meta/estado').val() == 'lobby' && root.child('rooms').child($code).child('meta/expiresAt').val() > now && ((!data.exists() && newData.val() == auth.uid) || data.val() == auth.uid)",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('meta/estado').val() == 'lobby' && root.child('rooms').child($code).child('meta/expiresAt').val() > now && ((!data.exists() && newData.val() == auth.uid) || data.val() == auth.uid)",
               ".validate": "newData.val() == auth.uid && (($type == 'slots' && ($id.matches(/^[1-3]$/) || (root.child('rooms').child($code).child('meta/modo').val() == 'race' && $id.matches(/^[4-8]$/)))) || ($type == 'avatars' && $id.matches(/^([1-9]|1[0-2])$/)) || ($type == 'roles' && ($id == 'vigia' || $id == 'bibliotecario' || $id == 'dibujante')))"
             }
           }
@@ -163,8 +163,8 @@
         "secreto": {
           "$round": {
             "$uid": {
-              ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('meta/modo').val() == 'coop' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia' && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
-              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia' && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
+              ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && root.child('rooms').child($code).child('meta/modo').val() == 'coop' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia' && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia' && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
               ".validate": "newData.hasChildren(['monstruoId'])",
               "monstruoId": {
                 ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 30"
@@ -176,10 +176,10 @@
           }
         },
         "entregas": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
           "$round": {
             "$uid": {
-              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && (root.child('rooms').child($code).child('meta/modo').val() == 'race' || root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante') && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && (root.child('rooms').child($code).child('meta/modo').val() == 'race' || root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante') && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
               ".validate": "newData.hasChildren(['ms','t'])",
               "ms": {
                 ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 75000"
@@ -194,10 +194,10 @@
           }
         },
         "resultados": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
           "$round": {
             "$uid": {
-              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && (root.child('rooms').child($code).child('meta/modo').val() == 'race' || root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante') && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && (root.child('rooms').child($code).child('meta/modo').val() == 'race' || root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante') && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
               ".validate": "newData.hasChildren(['etiqueta','confianza','precision','ms','miniatura','timeout','t']) && (newData.child('timeout').val() == true || root.child('rooms').child($code).child('entregas').child($round).child($uid).exists())",
               "etiqueta": {
                 ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^(alarm_clock|apple|axe|ball|balloon|bandage|bell|bird|bone|book|broom|bucket|cake|camera|candle|cat|cheese|coffee_cup|coin|cross|crown|diamond|dog|fire|fishing_hook|fishing_net|flashlight|flower|hammer|heart|house|ice_cream|lamp|life_ring|magnet|mirror|mousetrap|paintbrush|pencil|ring|rope|saw|scales|scissors|seagull|shoe|shovel|smiley_face|snowflake|sun|sunglasses|teddy_bear|toothbrush|towel|tree|umbrella)$/))"
@@ -232,10 +232,10 @@
           }
         },
         "veredictos": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
           "$round": {
             "$uid": {
-              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia'",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia'",
               ".validate": "newData.hasChildren(['monstruoId','ok','precision']) && newData.child('monstruoId').val() == root.child('rooms').child($code).child('secreto').child($round).child($uid).child('monstruoId').val()",
               "monstruoId": {
                 ".validate": "newData.isNumber()"
@@ -253,10 +253,10 @@
           }
         },
         "live": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
           "$round": {
             "$uid": {
-              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante' && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante' && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
               ".validate": "newData.hasChildren(['miniatura','t']) && (!data.exists() || newData.child('t').val() >= data.child('t').val() + 300)",
               "miniatura": {
                 ".validate": "newData.isString() && newData.val().length <= 20000 && newData.val().matches(/^data:image[/](webp|png|jpeg);base64,[A-Za-z0-9+=/]+$/)"
@@ -271,9 +271,9 @@
           }
         },
         "chat": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
           "$uid": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('jugadores').child($uid).exists()",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && root.child('rooms').child($code).child('jugadores').child($uid).exists()",
             ".validate": "!data.child('__last').exists() || newData.child('__last').val() >= data.child('__last').val() + 1000",
             "__last": {
               ".validate": "newData.isNumber() && newData.val() <= now + 5000"
@@ -299,9 +299,9 @@
           }
         },
         "whispers": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
           "$uid": {
-            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('meta/board').child($uid).child('lives').val() == 0",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && root.child('rooms').child($code).child('meta/board').child($uid).child('lives').val() == 0",
             ".validate": "!data.child('__last').exists() || newData.child('__last').val() >= data.child('__last').val() + 20000",
             "__last": {
               ".validate": "newData.isNumber() && newData.val() <= now + 5000"
@@ -327,11 +327,11 @@
           }
         },
         "audits": {
-          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
           "$round": {
             "$uid": {
               "$target": {
-                ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && $target != $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists()",
+                ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && $target != $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists()",
                 ".validate": "newData.hasChildren(['precision','ok','t'])",
                 "precision": {
                   ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
@@ -354,23 +354,11 @@
         }
       }
     },
-    // Identidad reflejada por Admin. Clientes sin acceso directo; las reglas consultan activo/nombre.
-    "cuentas": {
-      ".read": false,
-      ".write": false
-    },
-    // Espejo confirmado mutuo desde Firestore. Solo Admin escribe; lectura de la propia cuenta.
-    "amigos": {
-      "$uid": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid",
-        ".write": false
-      }
-    },
-    // Escritura propia y onDisconnect; lectura propia o de amigos confirmados.
+    // Escritura propia y onDisconnect; lectura propia o entre amigos confirmados.
     "presencia": {
       "$uid": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && (auth.uid == $uid || root.child('amigos').child(auth.uid).child($uid).val() == true)",
-        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $uid || root.child('social').child(auth.uid).child('confirmados').child($uid).val() == true)",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && (!newData.exists() || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()))",
         ".validate": "newData.hasChildren(['estado','sala','t'])",
         "estado": {
           ".validate": "newData.val() == 'enLinea' || newData.val() == 'enSala' || newData.val() == 'desconectado'"
@@ -386,18 +374,19 @@
         }
       }
     },
-    // Solo entre amigos mutuos, emisor miembro del lobby, destino propio y caducidad de dos minutos.
+    // Solo entre amigos mutuos, emisor miembro del lobby y caducidad de dos minutos.
     "invitaciones": {
       "$dest": {
-        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $dest",
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $dest",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $dest && root.child('accountCleanup').child(auth.uid).exists() && !newData.exists()",
         "$id": {
-          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && ((!newData.exists() && auth.uid == $dest) || (!data.exists() && newData.child('de').val() == auth.uid && root.child('amigos').child(auth.uid).child($dest).val() == true && root.child('amigos').child($dest).child(auth.uid).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(auth.uid).exists() && root.child('rooms').child(newData.child('sala').val()).child('meta/estado').val() == 'lobby'))",
-          ".validate": "newData.hasChildren(['de','nombre','sala','modo','dificultad','creadoEn','caducaEn'])",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && ((!newData.exists() && (auth.uid == $dest || auth.uid == data.child('de').val() || !data.exists())) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && !data.exists() && newData.child('de').val() == auth.uid && root.child('social').child(auth.uid).child('confirmados').child($dest).val() == true && root.child('social').child($dest).child('confirmados').child(auth.uid).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(auth.uid).exists() && root.child('rooms').child(newData.child('sala').val()).child('meta/estado').val() == 'lobby'))",
+          ".validate": "newData.hasChildren(['de','nombre','sala','modo','dificultad','creadoEn','caducaEn']) && newData.parent().parent().parent().child('enviadas').child(auth.uid).child($id).child('dest').val() == $dest",
           "de": {
             ".validate": "newData.val() == auth.uid"
           },
           "nombre": {
-            ".validate": "newData.val() == root.child('cuentas').child(auth.uid).child('nombre').val()"
+            ".validate": "newData.val() == root.child('users').child(auth.uid).child('nombre').val()"
           },
           "sala": {
             ".validate": "newData.isString() && newData.val().matches(/^[A-Z]{4}$/) && root.child('rooms').child(newData.val()).child('meta/expiresAt').val() > now"
@@ -418,6 +407,795 @@
             ".validate": false
           }
         }
+      }
+    },
+    // Perfiles sin correo. Reserva atómica, nombre fijo, nivel y XP con recibo.
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous'",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && ((!root.child('accountCleanup').child($uid).exists() && !root.child('deletedAccounts').child($uid).exists() && newData.exists()) || (!newData.exists() && newData.parent().parent().child('deletedAccounts').child($uid).val() == true && root.child('accountCleanup').child($uid).exists() && !newData.parent().parent().child('usernames').child(data.child('nombreLower').val()).exists() && !newData.parent().parent().child('friendcodes').child(data.child('codigoAmigo').val()).exists() && !newData.parent().parent().child('partidas').child($uid).exists() && !newData.parent().parent().child('social').child($uid).exists() && !newData.parent().parent().child('socialCounts').child($uid).exists() && !newData.parent().parent().child('socialLimits').child($uid).exists() && !newData.parent().parent().child('equipos').child($uid).exists() && !newData.parent().parent().child('salasJugador').child($uid).exists() && !newData.parent().parent().child('invitaciones').child($uid).exists() && !newData.parent().parent().child('enviadas').child($uid).exists() && !newData.parent().parent().child('records_solo_facil').child($uid).exists() && !newData.parent().parent().child('records_solo_normal').child($uid).exists() && !newData.parent().parent().child('records_solo_dificil').child($uid).exists() && !newData.parent().parent().child('records_solo_pesadilla').child($uid).exists() && !newData.parent().parent().child('records_carrera_facil').child($uid).exists() && !newData.parent().parent().child('records_carrera_normal').child($uid).exists() && !newData.parent().parent().child('records_carrera_dificil').child($uid).exists() && !newData.parent().parent().child('records_carrera_pesadilla').child($uid).exists()))",
+        ".validate": "newData.hasChildren(['nombre','nombreLower','avatar','xp','nivel','codigoAmigo','creadoEn','estadisticas','preferencias','ultimaPartida']) && ((newData.child('nivel').val() == 1 && newData.child('xp').val() >= 0 && newData.child('xp').val() < 80) || (newData.child('nivel').val() == 2 && newData.child('xp').val() >= 80 && newData.child('xp').val() < 284) || (newData.child('nivel').val() == 3 && newData.child('xp').val() >= 284 && newData.child('xp').val() < 637) || (newData.child('nivel').val() == 4 && newData.child('xp').val() >= 637 && newData.child('xp').val() < 1157) || (newData.child('nivel').val() == 5 && newData.child('xp').val() >= 1157 && newData.child('xp').val() < 1860) || (newData.child('nivel').val() == 6 && newData.child('xp').val() >= 1860 && newData.child('xp').val() < 2759) || (newData.child('nivel').val() == 7 && newData.child('xp').val() >= 2759 && newData.child('xp').val() < 3866) || (newData.child('nivel').val() == 8 && newData.child('xp').val() >= 3866 && newData.child('xp').val() < 5191) || (newData.child('nivel').val() == 9 && newData.child('xp').val() >= 5191 && newData.child('xp').val() < 6745) || (newData.child('nivel').val() == 10 && newData.child('xp').val() >= 6745 && newData.child('xp').val() < 8536) || (newData.child('nivel').val() == 11 && newData.child('xp').val() >= 8536 && newData.child('xp').val() < 10573) || (newData.child('nivel').val() == 12 && newData.child('xp').val() >= 10573 && newData.child('xp').val() < 12864) || (newData.child('nivel').val() == 13 && newData.child('xp').val() >= 12864 && newData.child('xp').val() < 15416) || (newData.child('nivel').val() == 14 && newData.child('xp').val() >= 15416 && newData.child('xp').val() < 18237) || (newData.child('nivel').val() == 15 && newData.child('xp').val() >= 18237 && newData.child('xp').val() < 21333) || (newData.child('nivel').val() == 16 && newData.child('xp').val() >= 21333 && newData.child('xp').val() < 24711) || (newData.child('nivel').val() == 17 && newData.child('xp').val() >= 24711 && newData.child('xp').val() < 28377) || (newData.child('nivel').val() == 18 && newData.child('xp').val() >= 28377 && newData.child('xp').val() < 32337) || (newData.child('nivel').val() == 19 && newData.child('xp').val() >= 32337 && newData.child('xp').val() < 36597) || (newData.child('nivel').val() == 20 && newData.child('xp').val() >= 36597 && newData.child('xp').val() < 41162) || (newData.child('nivel').val() == 21 && newData.child('xp').val() >= 41162 && newData.child('xp').val() < 46038) || (newData.child('nivel').val() == 22 && newData.child('xp').val() >= 46038 && newData.child('xp').val() < 51230) || (newData.child('nivel').val() == 23 && newData.child('xp').val() >= 51230 && newData.child('xp').val() < 56743) || (newData.child('nivel').val() == 24 && newData.child('xp').val() >= 56743 && newData.child('xp').val() < 62582) || (newData.child('nivel').val() == 25 && newData.child('xp').val() >= 62582 && newData.child('xp').val() < 68752) || (newData.child('nivel').val() == 26 && newData.child('xp').val() >= 68752 && newData.child('xp').val() < 75258) || (newData.child('nivel').val() == 27 && newData.child('xp').val() >= 75258 && newData.child('xp').val() < 82104) || (newData.child('nivel').val() == 28 && newData.child('xp').val() >= 82104 && newData.child('xp').val() < 89294) || (newData.child('nivel').val() == 29 && newData.child('xp').val() >= 89294 && newData.child('xp').val() < 96833) || (newData.child('nivel').val() == 30 && newData.child('xp').val() >= 96833 && newData.child('xp').val() < 104725) || (newData.child('nivel').val() == 31 && newData.child('xp').val() >= 104725 && newData.child('xp').val() < 112975) || (newData.child('nivel').val() == 32 && newData.child('xp').val() >= 112975 && newData.child('xp').val() < 121586) || (newData.child('nivel').val() == 33 && newData.child('xp').val() >= 121586 && newData.child('xp').val() < 130562) || (newData.child('nivel').val() == 34 && newData.child('xp').val() >= 130562 && newData.child('xp').val() < 139907) || (newData.child('nivel').val() == 35 && newData.child('xp').val() >= 139907 && newData.child('xp').val() < 149625) || (newData.child('nivel').val() == 36 && newData.child('xp').val() >= 149625 && newData.child('xp').val() < 159720) || (newData.child('nivel').val() == 37 && newData.child('xp').val() >= 159720 && newData.child('xp').val() < 170195) || (newData.child('nivel').val() == 38 && newData.child('xp').val() >= 170195 && newData.child('xp').val() < 181054) || (newData.child('nivel').val() == 39 && newData.child('xp').val() >= 181054 && newData.child('xp').val() < 192301) || (newData.child('nivel').val() == 40 && newData.child('xp').val() >= 192301 && newData.child('xp').val() < 203939) || (newData.child('nivel').val() == 41 && newData.child('xp').val() >= 203939 && newData.child('xp').val() < 215971) || (newData.child('nivel').val() == 42 && newData.child('xp').val() >= 215971 && newData.child('xp').val() < 228401) || (newData.child('nivel').val() == 43 && newData.child('xp').val() >= 228401 && newData.child('xp').val() < 241232) || (newData.child('nivel').val() == 44 && newData.child('xp').val() >= 241232 && newData.child('xp').val() < 254468) || (newData.child('nivel').val() == 45 && newData.child('xp').val() >= 254468 && newData.child('xp').val() < 268112) || (newData.child('nivel').val() == 46 && newData.child('xp').val() >= 268112 && newData.child('xp').val() < 282166) || (newData.child('nivel').val() == 47 && newData.child('xp').val() >= 282166 && newData.child('xp').val() < 296634) || (newData.child('nivel').val() == 48 && newData.child('xp').val() >= 296634 && newData.child('xp').val() < 311520) || (newData.child('nivel').val() == 49 && newData.child('xp').val() >= 311520 && newData.child('xp').val() < 326826) || (newData.child('nivel').val() == 50 && newData.child('xp').val() >= 326826 && newData.child('xp').val() < 342555) || (newData.child('nivel').val() == 51 && newData.child('xp').val() >= 342555 && newData.child('xp').val() < 358710) || (newData.child('nivel').val() == 52 && newData.child('xp').val() >= 358710 && newData.child('xp').val() < 375294) || (newData.child('nivel').val() == 53 && newData.child('xp').val() >= 375294 && newData.child('xp').val() < 392310) || (newData.child('nivel').val() == 54 && newData.child('xp').val() >= 392310 && newData.child('xp').val() < 409761) || (newData.child('nivel').val() == 55 && newData.child('xp').val() >= 409761 && newData.child('xp').val() < 427650) || (newData.child('nivel').val() == 56 && newData.child('xp').val() >= 427650 && newData.child('xp').val() < 445979) || (newData.child('nivel').val() == 57 && newData.child('xp').val() >= 445979 && newData.child('xp').val() < 464751) || (newData.child('nivel').val() == 58 && newData.child('xp').val() >= 464751 && newData.child('xp').val() < 483969) || (newData.child('nivel').val() == 59 && newData.child('xp').val() >= 483969 && newData.child('xp').val() < 503636) || (newData.child('nivel').val() == 60 && newData.child('xp').val() >= 503636 && newData.child('xp').val() < 523754) || (newData.child('nivel').val() == 61 && newData.child('xp').val() >= 523754 && newData.child('xp').val() < 544326) || (newData.child('nivel').val() == 62 && newData.child('xp').val() >= 544326 && newData.child('xp').val() < 565355) || (newData.child('nivel').val() == 63 && newData.child('xp').val() >= 565355 && newData.child('xp').val() < 586843) || (newData.child('nivel').val() == 64 && newData.child('xp').val() >= 586843 && newData.child('xp').val() < 608793) || (newData.child('nivel').val() == 65 && newData.child('xp').val() >= 608793 && newData.child('xp').val() < 631207) || (newData.child('nivel').val() == 66 && newData.child('xp').val() >= 631207 && newData.child('xp').val() < 654088) || (newData.child('nivel').val() == 67 && newData.child('xp').val() >= 654088 && newData.child('xp').val() < 677438) || (newData.child('nivel').val() == 68 && newData.child('xp').val() >= 677438 && newData.child('xp').val() < 701260) || (newData.child('nivel').val() == 69 && newData.child('xp').val() >= 701260 && newData.child('xp').val() < 725556) || (newData.child('nivel').val() == 70 && newData.child('xp').val() >= 725556 && newData.child('xp').val() < 750329) || (newData.child('nivel').val() == 71 && newData.child('xp').val() >= 750329 && newData.child('xp').val() < 775581) || (newData.child('nivel').val() == 72 && newData.child('xp').val() >= 775581 && newData.child('xp').val() < 801314) || (newData.child('nivel').val() == 73 && newData.child('xp').val() >= 801314 && newData.child('xp').val() < 827531) || (newData.child('nivel').val() == 74 && newData.child('xp').val() >= 827531 && newData.child('xp').val() < 854234) || (newData.child('nivel').val() == 75 && newData.child('xp').val() >= 854234 && newData.child('xp').val() < 881425) || (newData.child('nivel').val() == 76 && newData.child('xp').val() >= 881425 && newData.child('xp').val() < 909106) || (newData.child('nivel').val() == 77 && newData.child('xp').val() >= 909106 && newData.child('xp').val() < 937280) || (newData.child('nivel').val() == 78 && newData.child('xp').val() >= 937280 && newData.child('xp').val() < 965949) || (newData.child('nivel').val() == 79 && newData.child('xp').val() >= 965949 && newData.child('xp').val() < 995116) || (newData.child('nivel').val() == 80 && newData.child('xp').val() >= 995116 && newData.child('xp').val() < 1024782) || (newData.child('nivel').val() == 81 && newData.child('xp').val() >= 1024782 && newData.child('xp').val() < 1054950) || (newData.child('nivel').val() == 82 && newData.child('xp').val() >= 1054950 && newData.child('xp').val() < 1085622) || (newData.child('nivel').val() == 83 && newData.child('xp').val() >= 1085622 && newData.child('xp').val() < 1116800) || (newData.child('nivel').val() == 84 && newData.child('xp').val() >= 1116800 && newData.child('xp').val() < 1148486) || (newData.child('nivel').val() == 85 && newData.child('xp').val() >= 1148486 && newData.child('xp').val() < 1180682) || (newData.child('nivel').val() == 86 && newData.child('xp').val() >= 1180682 && newData.child('xp').val() < 1213391) || (newData.child('nivel').val() == 87 && newData.child('xp').val() >= 1213391 && newData.child('xp').val() < 1246614) || (newData.child('nivel').val() == 88 && newData.child('xp').val() >= 1246614 && newData.child('xp').val() < 1280354) || (newData.child('nivel').val() == 89 && newData.child('xp').val() >= 1280354 && newData.child('xp').val() < 1314612) || (newData.child('nivel').val() == 90 && newData.child('xp').val() >= 1314612 && newData.child('xp').val() < 1349391) || (newData.child('nivel').val() == 91 && newData.child('xp').val() >= 1349391 && newData.child('xp').val() < 1384693) || (newData.child('nivel').val() == 92 && newData.child('xp').val() >= 1384693 && newData.child('xp').val() < 1420519) || (newData.child('nivel').val() == 93 && newData.child('xp').val() >= 1420519 && newData.child('xp').val() < 1456872) || (newData.child('nivel').val() == 94 && newData.child('xp').val() >= 1456872 && newData.child('xp').val() < 1493754) || (newData.child('nivel').val() == 95 && newData.child('xp').val() >= 1493754 && newData.child('xp').val() < 1531167) || (newData.child('nivel').val() == 96 && newData.child('xp').val() >= 1531167 && newData.child('xp').val() < 1569112) || (newData.child('nivel').val() == 97 && newData.child('xp').val() >= 1569112 && newData.child('xp').val() < 1607592) || (newData.child('nivel').val() == 98 && newData.child('xp').val() >= 1607592 && newData.child('xp').val() < 1646608) || (newData.child('nivel').val() == 99 && newData.child('xp').val() >= 1646608)) && newData.parent().parent().child('usernames').child(newData.child('nombreLower').val()).val() == $uid && newData.parent().parent().child('friendcodes').child(newData.child('codigoAmigo').val()).val() == $uid && (!data.exists() ? (newData.child('xp').val() == 0 && newData.child('nivel').val() == 1 && newData.child('creadoEn').val() == now && newData.child('ultimaPartida').val() == '' && newData.child('estadisticas/partidas').val() == 0 && newData.child('estadisticas/pasillos').val() == 0 && newData.child('estadisticas/precisionTotal').val() == 0 && newData.child('estadisticas/precisionMuestras').val() == 0 && newData.child('estadisticas/tiempoMs').val() == 0 && newData.child('estadisticas/rachaMax').val() == 0 && newData.child('estadisticas/carrerasGanadas').val() == 0 && newData.child('estadisticas/cooperativas').val() == 0 && !newData.child('estadisticas/mejores').exists() && !newData.child('estadisticas/bestiario').exists() && !newData.child('estadisticas/logros').exists() && newData.parent().parent().child('socialCounts').child($uid).child('accion').val() == 'crear') : (newData.child('nombre').val() == data.child('nombre').val() && newData.child('nombreLower').val() == data.child('nombreLower').val() && newData.child('codigoAmigo').val() == data.child('codigoAmigo').val() && newData.child('creadoEn').val() == data.child('creadoEn').val() && newData.child('xp').val() >= data.child('xp').val() && (newData.child('ultimaPartida').val() == data.child('ultimaPartida').val() ? newData.child('xp').val() == data.child('xp').val() : (newData.child('ultimaPartida').val() != data.child('ultimaPartida').val() && !root.child('partidas').child($uid).child(newData.child('ultimaPartida').val()).exists() && newData.parent().parent().child('partidas').child($uid).child(newData.child('ultimaPartida').val()).child('fecha').val() == now && newData.parent().parent().child('partidas').child($uid).child(newData.child('ultimaPartida').val()).child('xp').val() == newData.child('xp').val() - data.child('xp').val() && newData.parent().parent().child('partidas').child($uid).child(newData.child('ultimaPartida').val()).child('xp').val() >= 0 && newData.parent().parent().child('partidas').child($uid).child(newData.child('ultimaPartida').val()).child('xp').val() <= 600 && newData.child('estadisticas/partidas').val() == data.child('estadisticas/partidas').val() + 1))))",
+        "nombre": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9_]{3,14}$/) && !newData.val().toLowerCase().matches(/^(admin|administrador|firebase|moderador|sistema|invitado)$/) && !newData.val().toLowerCase().matches(/.*(puta|puto|mierda|fuck|nazi).*/)"
+        },
+        "nombreLower": {
+          ".validate": "newData.val() == newData.parent().child('nombre').val().toLowerCase()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "xp": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "codigoAmigo": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Z2-9]{6}$/)"
+        },
+        "creadoEn": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000000"
+        },
+        "ultimaPartida": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[A-Za-z0-9_-]{1,128}$/))"
+        },
+        "preferencias": {
+          ".validate": "newData.hasChildren(['solicitudes'])",
+          "solicitudes": {
+            ".validate": "newData.isBoolean()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "$other": {
+          ".validate": false
+        },
+        "estadisticas": {
+          ".validate": "newData.hasChildren([\"partidas\",\"pasillos\",\"precisionTotal\",\"precisionMuestras\",\"tiempoMs\",\"rachaMax\",\"carrerasGanadas\",\"cooperativas\"])",
+          "$other": {
+            ".validate": false
+          },
+          // Recibos privados, inmutables, máximo 600 XP y escritura junto al progreso.
+          "partidas": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (!data.exists() || newData.val() == data.val() || (newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val() && newData.val() >= data.val()))"
+          },
+          "pasillos": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (!data.exists() || newData.val() == data.val() || (newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val() && newData.val() >= data.val()))"
+          },
+          "precisionTotal": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (!data.exists() || newData.val() == data.val() || (newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val() && newData.val() >= data.val()))"
+          },
+          "precisionMuestras": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (!data.exists() || newData.val() == data.val() || (newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val() && newData.val() >= data.val()))"
+          },
+          "tiempoMs": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (!data.exists() || newData.val() == data.val() || (newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val() && newData.val() >= data.val()))"
+          },
+          "rachaMax": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (!data.exists() || newData.val() == data.val() || (newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val() && newData.val() >= data.val()))"
+          },
+          "carrerasGanadas": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (!data.exists() || newData.val() == data.val() || (newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val() && newData.val() >= data.val()))"
+          },
+          "cooperativas": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000 && (!data.exists() || newData.val() == data.val() || (newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val() && newData.val() >= data.val()))"
+          },
+          "mejores": {
+            "$key": {
+              ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 50000 && $key.matches(/^(solo|race|coop)_(facil|normal|dificil|pesadilla)$/) && (!data.exists() || newData.val() >= data.val())"
+            }
+          },
+          "bestiario": {
+            "$id": {
+              ".validate": "$id.matches(/^([1-9]|[12][0-9]|30)$/) && newData.hasChildren(['vistos','vencidos']) && newData.child('vencidos').val() <= newData.child('vistos').val()",
+              "vistos": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000"
+              },
+              "vencidos": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "logros": {
+            "$i": {
+              ".validate": "$i.matches(/^([0-9]|1[01])$/) && newData.isString() && newData.val().matches(/^(primera|diez|cincuenta|carrera|margen|treinta|vistos|racha|coop|precision|pesadilla|veterano)$/)"
+            }
+          }
+        }
+      }
+    },
+    // Nombre único sin distinguir mayúsculas; forma parte del mismo commit que el perfil.
+    "usernames": {
+      "$name": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous'",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && ((!data.exists() && newData.val() == auth.uid && newData.parent().parent().child('users').child(auth.uid).child('nombreLower').val() == $name) || (!newData.exists() && data.val() == auth.uid && root.child('accountCleanup').child(auth.uid).exists() && !newData.parent().parent().child('users').child(auth.uid).exists()))",
+        ".validate": "newData.isString() && newData.val() == auth.uid"
+      }
+    },
+    // Código único de seis caracteres; reserva junto al perfil.
+    "friendcodes": {
+      "$code": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous'",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && ((!data.exists() && newData.val() == auth.uid && newData.parent().parent().child('users').child(auth.uid).child('codigoAmigo').val() == $code) || (!newData.exists() && data.val() == auth.uid && root.child('accountCleanup').child(auth.uid).exists() && !newData.parent().parent().child('users').child(auth.uid).exists()))",
+        ".validate": "newData.isString() && newData.val() == auth.uid"
+      }
+    },
+    // Recibos privados, inmutables, máximo 600 XP y escritura junto al progreso.
+    "partidas": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && root.child('accountCleanup').child($uid).exists() && !newData.exists()",
+        "$id": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && !root.child('accountCleanup').child($uid).exists() && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['xp','fecha','modo','dificultad']) && newData.parent().parent().parent().child('users').child($uid).child('ultimaPartida').val() == $id && newData.parent().parent().parent().child('users').child($uid).child('xp').val() == root.child('users').child($uid).child('xp').val() + newData.child('xp').val()",
+          "xp": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 600"
+          },
+          "fecha": {
+            ".validate": "newData.val() == now"
+          },
+          "modo": {
+            ".validate": "newData.val() == 'solo' || newData.val() == 'race' || newData.val() == 'coop'"
+          },
+          "dificultad": {
+            ".validate": "newData.val().matches(/^(facil|normal|dificil|pesadilla)$/)"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    // Marcador propio de borrado; bloquea nuevas partidas y permite reintentar.
+    "accountCleanup": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && ((!data.exists() && newData.exists() && root.child('users').child($uid).exists()) || (!newData.exists() && !root.child('users').child($uid).exists() && !root.child('usernames').child(data.child('nombreLower').val()).exists() && !root.child('friendcodes').child(data.child('codigoAmigo').val()).exists()))",
+        ".validate": "newData.hasChildren(['nombreLower','codigoAmigo','inicio'])",
+        "nombreLower": {
+          ".validate": "newData.val() == root.child('users').child($uid).child('nombreLower').val()"
+        },
+        "codigoAmigo": {
+          ".validate": "newData.val() == root.child('users').child($uid).child('codigoAmigo').val()"
+        },
+        "inicio": {
+          ".validate": "newData.val() == now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    // Contadores 100 amigos / 50 pendientes: solo junto a una transición concreta.
+    "socialCounts": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous'",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && ((newData.exists() && (auth.uid == $uid || newData.child('otroUid').val() == auth.uid)) || (!newData.exists() && auth.uid == $uid && root.child('accountCleanup').child(auth.uid).exists()))",
+        ".validate": "newData.hasChildren(['amigos','pendientes','otroUid','accion','fecha']) && newData.child('fecha').val() == now && (!data.exists() ? (newData.child('accion').val() == 'crear' && auth.uid == $uid && newData.child('amigos').val() == 0 && newData.child('pendientes').val() == 0 && newData.child('otroUid').val() == '' && newData.parent().parent().child('users').child($uid).child('creadoEn').val() == now) : ((newData.parent().parent().child('socialCounts').child(newData.child('otroUid').val()).child('fecha').val() == now && newData.parent().parent().child('socialCounts').child(newData.child('otroUid').val()).child('otroUid').val() == $uid && newData.parent().parent().child('socialCounts').child(newData.child('otroUid').val()).child('accion').val() == newData.child('accion').val() && ((newData.child('accion').val() == 'enviar' && !root.child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).exists() && !root.child('social').child($uid).child('confirmados').child(newData.child('otroUid').val()).exists() && newData.parent().parent().child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).child('fecha').val() == now && newData.child('amigos').val() == data.child('amigos').val() && newData.child('pendientes').val() == data.child('pendientes').val() + 1) || (newData.child('accion').val() == 'aceptar' && root.child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).exists() && newData.parent().parent().child('social').child($uid).child('confirmados').child(newData.child('otroUid').val()).val() == true && !newData.parent().parent().child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).exists() && newData.child('amigos').val() == data.child('amigos').val() + 1 && newData.child('pendientes').val() == data.child('pendientes').val() - 1) || ((newData.child('accion').val() == 'rechazar' || newData.child('accion').val() == 'cancelar') && root.child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).exists() && !newData.parent().parent().child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).exists() && !newData.parent().parent().child('social').child($uid).child('confirmados').child(newData.child('otroUid').val()).exists() && newData.child('amigos').val() == data.child('amigos').val() && newData.child('pendientes').val() == data.child('pendientes').val() - 1) || (newData.child('accion').val() == 'eliminar' && root.child('social').child($uid).child('confirmados').child(newData.child('otroUid').val()).val() == true && !newData.parent().parent().child('social').child($uid).child('confirmados').child(newData.child('otroUid').val()).exists() && newData.child('amigos').val() == data.child('amigos').val() - 1 && newData.child('pendientes').val() == data.child('pendientes').val()))) || (newData.child('accion').val() == 'limpiar' && newData.child('otroUid').val() == auth.uid && root.child('accountCleanup').child(auth.uid).exists() && !newData.parent().parent().child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).exists() && !newData.parent().parent().child('social').child($uid).child('confirmados').child(newData.child('otroUid').val()).exists() && newData.child('amigos').val() == data.child('amigos').val() - (root.child('social').child($uid).child('confirmados').child(newData.child('otroUid').val()).exists() ? 1 : 0) && newData.child('pendientes').val() == data.child('pendientes').val() - (root.child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).exists() ? 1 : 0) && (root.child('social').child($uid).child('confirmados').child(newData.child('otroUid').val()).exists() || root.child('social').child($uid).child('pendientes').child(newData.child('otroUid').val()).exists()))))",
+        "amigos": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 100"
+        },
+        "pendientes": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 50"
+        },
+        "otroUid": {
+          ".validate": "newData.isString()"
+        },
+        "accion": {
+          ".validate": "newData.isString()"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    // Solicitudes y confirmaciones mutuas. Solo el destinatario acepta.
+    "social": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid",
+        "pendientes": {
+          "$other": {
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && $uid != $other && ((root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $uid || auth.uid == $other) && !newData.exists() && !newData.parent().parent().parent().parent().child('social').child($other).child('pendientes').child($uid).exists() && !newData.parent().parent().parent().parent().child('social').child($other).child('confirmados').child($uid).exists() && (auth.uid == $uid ? !newData.parent().parent().parent().parent().child('socialCounts').child($uid).exists() : newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('accion').val() == 'limpiar' && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('fecha').val() == now && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('otroUid').val() == auth.uid)) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $uid || auth.uid == $other) && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('otroUid').val() == $other && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('fecha').val() == now && ((!data.exists() && newData.exists() && newData.child('de').val() == auth.uid && !root.child('social').child($uid).child('confirmados').child($other).exists() && root.child('socialCounts').child($uid).child('amigos').val() < 100 && root.child('socialCounts').child($other).child('amigos').val() < 100 && root.child('users').child(auth.uid == $uid ? $other : $uid).child('preferencias/solicitudes').val() == true && !root.child('accountCleanup').child($other).exists() && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('accion').val() == 'enviar') || (data.exists() && !newData.exists() && !newData.parent().parent().parent().parent().child('social').child($other).child('pendientes').child($uid).exists() && (newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('accion').val() == 'aceptar' ? (data.child('de').val() != auth.uid && newData.parent().parent().parent().parent().child('social').child($other).child('confirmados').child($uid).val() == true) : (newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('accion').val() == 'cancelar' ? data.child('de').val() == auth.uid : newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('accion').val() == 'rechazar' && data.child('de').val() != auth.uid))))))",
+            ".validate": "newData.hasChildren(['de','fecha','slot']) && newData.child('de').val() == auth.uid && newData.child('fecha').val() == now && newData.parent().parent().parent().parent().child('social').child($other).child('pendientes').child($uid).child('de').val() == auth.uid && newData.parent().parent().parent().parent().child('social').child($other).child('pendientes').child($uid).child('fecha').val() == now && newData.parent().parent().parent().parent().child('social').child($other).child('pendientes').child($uid).child('slot').val() == newData.child('slot').val() && newData.parent().parent().parent().parent().child('socialLimits').child(auth.uid).child(newData.child('slot').val()+'').child('t').val() == now && newData.parent().parent().parent().parent().child('socialLimits').child(auth.uid).child(newData.child('slot').val()+'').child('dest').val() == (auth.uid == $uid ? $other : $uid)",
+            "de": {
+              ".validate": "newData.isString()"
+            },
+            "fecha": {
+              ".validate": "newData.val() == now"
+            },
+            "slot": {
+              ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 9"
+            },
+            "$extra": {
+              ".validate": false
+            }
+          }
+        },
+        "confirmados": {
+          "$other": {
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && $uid != $other && ((root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $uid || auth.uid == $other) && !newData.exists() && !newData.parent().parent().parent().parent().child('social').child($other).child('pendientes').child($uid).exists() && !newData.parent().parent().parent().parent().child('social').child($other).child('confirmados').child($uid).exists() && (auth.uid == $uid ? !newData.parent().parent().parent().parent().child('socialCounts').child($uid).exists() : newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('accion').val() == 'limpiar' && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('fecha').val() == now && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('otroUid').val() == auth.uid)) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $uid || auth.uid == $other) && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('otroUid').val() == $other && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('fecha').val() == now && ((!data.exists() && newData.val() == true && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('accion').val() == 'aceptar' && root.child('social').child($uid).child('pendientes').child($other).exists() && root.child('social').child($uid).child('pendientes').child($other).child('de').val() != auth.uid && newData.parent().parent().parent().parent().child('social').child($other).child('confirmados').child($uid).val() == true && !newData.parent().parent().parent().parent().child('social').child($other).child('pendientes').child($uid).exists() && !newData.parent().parent().parent().parent().child('social').child($uid).child('pendientes').child($other).exists()) || (data.val() == true && !newData.exists() && newData.parent().parent().parent().parent().child('socialCounts').child($uid).child('accion').val() == 'eliminar' && !newData.parent().parent().parent().parent().child('social').child($other).child('confirmados').child($uid).exists()))))",
+            ".validate": "newData.val() == true"
+          }
+        },
+        "$extra": {
+          ".validate": false
+        }
+      }
+    },
+    // Diez ranuras de tiempo de servidor; máximo diez envíos en una hora móvil.
+    "socialLimits": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && root.child('accountCleanup').child($uid).exists() && !newData.exists()",
+        "$slot": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists() && auth.uid == $uid && (!data.exists() || data.child('t').val() <= now - 3600000)",
+          ".validate": "$slot.matches(/^([0-9])$/) && newData.hasChildren(['t','dest']) && newData.child('t').val() == now && newData.parent().parent().parent().child('social').child($uid).child('pendientes').child(newData.child('dest').val()).child('fecha').val() == now && !root.child('social').child($uid).child('pendientes').child(newData.child('dest').val()).exists()",
+          "t": {
+            ".validate": "newData.val() == now"
+          },
+          "dest": {
+            ".validate": "newData.isString()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "records_solo_facil": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && auth.uid == $id) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $id || !data.exists() && auth.uid == $id))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\"]) && newData.child('uid').val() == $id && newData.child('nombre').val() == root.child('users').child($id).child('nombre').val() && newData.child('avatar').val() == root.child('users').child($id).child('avatar').val() && newData.child('nivel').val() == root.child('users').child($id).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'facil' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 10000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'facil'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "records_solo_normal": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && auth.uid == $id) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $id || !data.exists() && auth.uid == $id))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\"]) && newData.child('uid').val() == $id && newData.child('nombre').val() == root.child('users').child($id).child('nombre').val() && newData.child('avatar').val() == root.child('users').child($id).child('avatar').val() && newData.child('nivel').val() == root.child('users').child($id).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'normal' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 10000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'normal'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "records_solo_dificil": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && auth.uid == $id) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $id || !data.exists() && auth.uid == $id))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\"]) && newData.child('uid').val() == $id && newData.child('nombre').val() == root.child('users').child($id).child('nombre').val() && newData.child('avatar').val() == root.child('users').child($id).child('avatar').val() && newData.child('nivel').val() == root.child('users').child($id).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'dificil' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 10000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'dificil'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "records_solo_pesadilla": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && auth.uid == $id) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $id || !data.exists() && auth.uid == $id))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\"]) && newData.child('uid').val() == $id && newData.child('nombre').val() == root.child('users').child($id).child('nombre').val() && newData.child('avatar').val() == root.child('users').child($id).child('avatar').val() && newData.child('nivel').val() == root.child('users').child($id).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'pesadilla' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 10000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'pesadilla'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "records_carrera_facil": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && auth.uid == $id) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $id || !data.exists() && auth.uid == $id))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\"]) && newData.child('uid').val() == $id && newData.child('nombre').val() == root.child('users').child($id).child('nombre').val() && newData.child('avatar').val() == root.child('users').child($id).child('avatar').val() && newData.child('nivel').val() == root.child('users').child($id).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'facil' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 50000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'facil'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "records_carrera_normal": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && auth.uid == $id) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $id || !data.exists() && auth.uid == $id))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\"]) && newData.child('uid').val() == $id && newData.child('nombre').val() == root.child('users').child($id).child('nombre').val() && newData.child('avatar').val() == root.child('users').child($id).child('avatar').val() && newData.child('nivel').val() == root.child('users').child($id).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'normal' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 50000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'normal'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "records_carrera_dificil": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && auth.uid == $id) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $id || !data.exists() && auth.uid == $id))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\"]) && newData.child('uid').val() == $id && newData.child('nombre').val() == root.child('users').child($id).child('nombre').val() && newData.child('avatar').val() == root.child('users').child($id).child('avatar').val() && newData.child('nivel').val() == root.child('users').child($id).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'dificil' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 50000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'dificil'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "records_carrera_pesadilla": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && auth.uid == $id) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (auth.uid == $id || !data.exists() && auth.uid == $id))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\"]) && newData.child('uid').val() == $id && newData.child('nombre').val() == root.child('users').child($id).child('nombre').val() && newData.child('avatar').val() == root.child('users').child($id).child('avatar').val() && newData.child('nivel').val() == root.child('users').child($id).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'pesadilla' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val())",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 50000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'pesadilla'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "records_coop_facil": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && (auth.uid == newData.child('miembros/0').val() || auth.uid == newData.child('miembros/1').val() || auth.uid == newData.child('miembros/2').val())) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && ((auth.uid == data.child('miembros/0').val() || auth.uid == data.child('miembros/1').val() || auth.uid == data.child('miembros/2').val())))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\",\"miembros\",\"sala\",\"partida\"]) && newData.child('uid').val() == newData.child('uid').val() && newData.child('nombre').val() == root.child('users').child(newData.child('uid').val()).child('nombre').val() && newData.child('avatar').val() == root.child('users').child(newData.child('uid').val()).child('avatar').val() && newData.child('nivel').val() == root.child('users').child(newData.child('uid').val()).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'facil' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val()) && newData.child('uid').val() == newData.child('miembros').child('0').val() && $id == newData.child('miembros').child('0').val() + '|' + newData.child('miembros').child('1').val() + '|' + newData.child('miembros').child('2').val() && newData.child('miembros').child('0').val() < newData.child('miembros').child('1').val() && newData.child('miembros').child('1').val() < newData.child('miembros').child('2').val() && root.child('rooms').child(newData.child('sala').val()).child('meta/modo').val() == 'coop' && root.child('rooms').child(newData.child('sala').val()).child('meta/estado').val() == 'podium' && root.child('rooms').child(newData.child('sala').val()).child('meta/personalizada').val() == false && root.child('rooms').child(newData.child('sala').val()).child('meta/dificultad').val() == 'facil' && root.child('rooms').child(newData.child('sala').val()).child('meta/match').val() == newData.child('partida').val() && root.child('rooms').child(newData.child('sala').val()).child('meta/pasillos').val() == newData.child('puntuacion').val() && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('0').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('0').val()).child('facil').child($id).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('1').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('1').val()).child('facil').child($id).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('2').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('2').val()).child('facil').child($id).val() == true",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 10000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'facil'"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "miembros": {
+          "0": {
+            ".validate": "newData.isString()"
+          },
+          "1": {
+            ".validate": "newData.isString()"
+          },
+          "2": {
+            ".validate": "newData.isString()"
+          },
+          ".validate": "newData.hasChildren(['0','1','2'])",
+          "$other": {
+            ".validate": false
+          }
+        },
+        "sala": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Z]{4}$/)"
+        },
+        "partida": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000000"
+        }
+      }
+    },
+    "records_coop_normal": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && (auth.uid == newData.child('miembros/0').val() || auth.uid == newData.child('miembros/1').val() || auth.uid == newData.child('miembros/2').val())) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && ((auth.uid == data.child('miembros/0').val() || auth.uid == data.child('miembros/1').val() || auth.uid == data.child('miembros/2').val())))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\",\"miembros\",\"sala\",\"partida\"]) && newData.child('uid').val() == newData.child('uid').val() && newData.child('nombre').val() == root.child('users').child(newData.child('uid').val()).child('nombre').val() && newData.child('avatar').val() == root.child('users').child(newData.child('uid').val()).child('avatar').val() && newData.child('nivel').val() == root.child('users').child(newData.child('uid').val()).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'normal' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val()) && newData.child('uid').val() == newData.child('miembros').child('0').val() && $id == newData.child('miembros').child('0').val() + '|' + newData.child('miembros').child('1').val() + '|' + newData.child('miembros').child('2').val() && newData.child('miembros').child('0').val() < newData.child('miembros').child('1').val() && newData.child('miembros').child('1').val() < newData.child('miembros').child('2').val() && root.child('rooms').child(newData.child('sala').val()).child('meta/modo').val() == 'coop' && root.child('rooms').child(newData.child('sala').val()).child('meta/estado').val() == 'podium' && root.child('rooms').child(newData.child('sala').val()).child('meta/personalizada').val() == false && root.child('rooms').child(newData.child('sala').val()).child('meta/dificultad').val() == 'normal' && root.child('rooms').child(newData.child('sala').val()).child('meta/match').val() == newData.child('partida').val() && root.child('rooms').child(newData.child('sala').val()).child('meta/pasillos').val() == newData.child('puntuacion').val() && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('0').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('0').val()).child('normal').child($id).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('1').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('1').val()).child('normal').child($id).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('2').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('2').val()).child('normal').child($id).val() == true",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 10000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'normal'"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "miembros": {
+          "0": {
+            ".validate": "newData.isString()"
+          },
+          "1": {
+            ".validate": "newData.isString()"
+          },
+          "2": {
+            ".validate": "newData.isString()"
+          },
+          ".validate": "newData.hasChildren(['0','1','2'])",
+          "$other": {
+            ".validate": false
+          }
+        },
+        "sala": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Z]{4}$/)"
+        },
+        "partida": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000000"
+        }
+      }
+    },
+    "records_coop_dificil": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && (auth.uid == newData.child('miembros/0').val() || auth.uid == newData.child('miembros/1').val() || auth.uid == newData.child('miembros/2').val())) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && ((auth.uid == data.child('miembros/0').val() || auth.uid == data.child('miembros/1').val() || auth.uid == data.child('miembros/2').val())))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\",\"miembros\",\"sala\",\"partida\"]) && newData.child('uid').val() == newData.child('uid').val() && newData.child('nombre').val() == root.child('users').child(newData.child('uid').val()).child('nombre').val() && newData.child('avatar').val() == root.child('users').child(newData.child('uid').val()).child('avatar').val() && newData.child('nivel').val() == root.child('users').child(newData.child('uid').val()).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'dificil' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val()) && newData.child('uid').val() == newData.child('miembros').child('0').val() && $id == newData.child('miembros').child('0').val() + '|' + newData.child('miembros').child('1').val() + '|' + newData.child('miembros').child('2').val() && newData.child('miembros').child('0').val() < newData.child('miembros').child('1').val() && newData.child('miembros').child('1').val() < newData.child('miembros').child('2').val() && root.child('rooms').child(newData.child('sala').val()).child('meta/modo').val() == 'coop' && root.child('rooms').child(newData.child('sala').val()).child('meta/estado').val() == 'podium' && root.child('rooms').child(newData.child('sala').val()).child('meta/personalizada').val() == false && root.child('rooms').child(newData.child('sala').val()).child('meta/dificultad').val() == 'dificil' && root.child('rooms').child(newData.child('sala').val()).child('meta/match').val() == newData.child('partida').val() && root.child('rooms').child(newData.child('sala').val()).child('meta/pasillos').val() == newData.child('puntuacion').val() && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('0').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('0').val()).child('dificil').child($id).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('1').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('1').val()).child('dificil').child($id).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('2').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('2').val()).child('dificil').child($id).val() == true",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 10000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'dificil'"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "miembros": {
+          "0": {
+            ".validate": "newData.isString()"
+          },
+          "1": {
+            ".validate": "newData.isString()"
+          },
+          "2": {
+            ".validate": "newData.isString()"
+          },
+          ".validate": "newData.hasChildren(['0','1','2'])",
+          "$other": {
+            ".validate": false
+          }
+        },
+        "sala": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Z]{4}$/)"
+        },
+        "partida": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000000"
+        }
+      }
+    },
+    "records_coop_pesadilla": {
+      ".read": true,
+      ".indexOn": [
+        "puntuacion"
+      ],
+      "$id": {
+        ".write": "((auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('users').child(auth.uid).exists() && !root.child('accountCleanup').child(auth.uid).exists()) && newData.exists() && (auth.uid == newData.child('miembros/0').val() || auth.uid == newData.child('miembros/1').val() || auth.uid == newData.child('miembros/2').val())) || (auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && !newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && ((auth.uid == data.child('miembros/0').val() || auth.uid == data.child('miembros/1').val() || auth.uid == data.child('miembros/2').val())))",
+        ".validate": "newData.hasChildren([\"uid\",\"nombre\",\"avatar\",\"nivel\",\"puntuacion\",\"fecha\",\"dificultad\",\"miembros\",\"sala\",\"partida\"]) && newData.child('uid').val() == newData.child('uid').val() && newData.child('nombre').val() == root.child('users').child(newData.child('uid').val()).child('nombre').val() && newData.child('avatar').val() == root.child('users').child(newData.child('uid').val()).child('avatar').val() && newData.child('nivel').val() == root.child('users').child(newData.child('uid').val()).child('nivel').val() && newData.child('fecha').val() == now && newData.child('dificultad').val() == 'pesadilla' && (!data.exists() || newData.child('puntuacion').val() >= data.child('puntuacion').val()) && newData.child('uid').val() == newData.child('miembros').child('0').val() && $id == newData.child('miembros').child('0').val() + '|' + newData.child('miembros').child('1').val() + '|' + newData.child('miembros').child('2').val() && newData.child('miembros').child('0').val() < newData.child('miembros').child('1').val() && newData.child('miembros').child('1').val() < newData.child('miembros').child('2').val() && root.child('rooms').child(newData.child('sala').val()).child('meta/modo').val() == 'coop' && root.child('rooms').child(newData.child('sala').val()).child('meta/estado').val() == 'podium' && root.child('rooms').child(newData.child('sala').val()).child('meta/personalizada').val() == false && root.child('rooms').child(newData.child('sala').val()).child('meta/dificultad').val() == 'pesadilla' && root.child('rooms').child(newData.child('sala').val()).child('meta/match').val() == newData.child('partida').val() && root.child('rooms').child(newData.child('sala').val()).child('meta/pasillos').val() == newData.child('puntuacion').val() && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('0').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('0').val()).child('pesadilla').child($id).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('1').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('1').val()).child('pesadilla').child($id).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(newData.child('miembros').child('2').val()).exists() && newData.parent().parent().child('equipos').child(newData.child('miembros').child('2').val()).child('pesadilla').child($id).val() == true",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "nombre": {
+          ".validate": "newData.isString()"
+        },
+        "avatar": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12"
+        },
+        "nivel": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 99"
+        },
+        "puntuacion": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 10000"
+        },
+        "fecha": {
+          ".validate": "newData.val() == now"
+        },
+        "dificultad": {
+          ".validate": "newData.val() == 'pesadilla'"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "miembros": {
+          "0": {
+            ".validate": "newData.isString()"
+          },
+          "1": {
+            ".validate": "newData.isString()"
+          },
+          "2": {
+            ".validate": "newData.isString()"
+          },
+          ".validate": "newData.hasChildren(['0','1','2'])",
+          "$other": {
+            ".validate": false
+          }
+        },
+        "sala": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Z]{4}$/)"
+        },
+        "partida": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000000000"
+        }
+      }
+    },
+    // Índice de equipos validado junto a su récord.
+    "equipos": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous'",
+        "$d": {
+          "$id": {
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && ((newData.val() == true && newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id).exists() && (auth.uid == newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id).child('miembros/0').val() || auth.uid == newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id).child('miembros/1').val() || auth.uid == newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id).child('miembros/2').val()) && ($uid == newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id).child('miembros/0').val() || $uid == newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id).child('miembros/1').val() || $uid == newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id).child('miembros/2').val())) || (!newData.exists() && root.child('accountCleanup').child(auth.uid).exists() && (((auth.uid == root.child('records_coop_' + $d).child($id).child('miembros/0').val() || auth.uid == root.child('records_coop_' + $d).child($id).child('miembros/1').val() || auth.uid == root.child('records_coop_' + $d).child($id).child('miembros/2').val()) && !newData.parent().parent().parent().parent().child('records_coop_' + $d).child($id).exists()) || auth.uid == $uid && !root.child('records_coop_' + $d).child($id).exists())))",
+            ".validate": "$d.matches(/^(facil|normal|dificil|pesadilla)$/) && newData.val() == true"
+          }
+        }
+      }
+    },
+    // Índice propio para limpiar salas al eliminar la cuenta.
+    "salasJugador": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid",
+        "$code": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && ((!newData.exists()) || (newData.val() == true && root.child('rooms').child($code).child('jugadores').child($uid).exists()))",
+          ".validate": "$code.matches(/^[A-Z]{4}$/) && newData.val() == true"
+        }
+      }
+    },
+    // Índice propio de invitaciones para limpiar al borrarse.
+    "enviadas": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid",
+        "$id": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && ((auth.uid == $uid && newData.exists()) || (!newData.exists() && (auth.uid == $uid || auth.uid == data.child('dest').val())))",
+          ".validate": "newData.hasChildren(['dest']) && newData.parent().parent().parent().child('invitaciones').child(newData.child('dest').val()).child($id).child('de').val() == $uid",
+          "dest": {
+            ".validate": "newData.isString()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    // Índice de tiempos: limpieza de hasta ocho salas caducadas al conectarse.
+    "caducidad": {
+      ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous'",
+      ".indexOn": [
+        ".value"
+      ],
+      "$code": {
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && ((newData.isNumber() && newData.val() == root.child('rooms').child($code).child('meta/expiresAt').val()) || (!newData.exists() && (!root.child('rooms').child($code).exists() || root.child('rooms').child($code).child('meta/expiresAt').val() < now || root.child('accountCleanup').child(auth.uid).exists() && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists())))",
+        ".validate": "$code.matches(/^[A-Z]{4}$/) && newData.isNumber()"
+      }
+    },
+    // Solo UID eliminado: impide recrear el perfil con un token antiguo aún válido.
+    "deletedAccounts": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && auth.uid == $uid && !data.exists() && newData.val() == true && root.child('accountCleanup').child($uid).exists() && !newData.parent().parent().child('users').child($uid).exists()",
+        ".validate": "newData.val() == true"
       }
     }
   }

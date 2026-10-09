@@ -1,9 +1,9 @@
-// Firestore conserva solicitudes; RTDB aporta presencia e invitaciones en tiempo real.
+// RTDB conserva solicitudes, amistades, presencia e invitaciones sin espejos de servidor.
 // generation/revision descartan respuestas antiguas al cambiar de cuenta o de lista.
-import {SOCIAL} from './config.js?v=1.3.0';
-import {currentUser,authError} from './auth.js?v=1.3.0';
-import {firestoreService,databaseService,callServer,withDeadline} from './sdk.js?v=1.3.0';
-import {readProfile,playerNode,getProfile} from './profile.js?v=1.3.0';
+import {SOCIAL} from './config.js?v=1.3.1';
+import {currentUser,authError,validateUsername} from './auth.js?v=1.3.1';
+import {databaseService,readData,withDeadline} from './sdk.js?v=1.3.1';
+import {readProfile,playerNode,getProfile} from './profile.js?v=1.3.1';
 let list=[],stops=[],peerStops=[],presence={},onChange=()=>{},invitationCallback=()=>{},seen=new Set(),generation=0;
 let serverOffset=0;
 export const socialNow=()=>Date.now()+serverOffset;
@@ -14,38 +14,75 @@ export function rememberFriendLink() {const code=new URL(location.href).searchPa
 export async function completeFriendLink() {if(!currentUser())return;let code;try{code=localStorage.getItem(PENDING);}catch{}if(!code)return;
   try{await sendRequest(code);localStorage.removeItem(PENDING);return 'Solicitud enviada.';}catch(e){if(/already-exists|invalid-argument|not-found/.test(e.code||''))localStorage.removeItem(PENDING);return authError(e);}
 }
-export const sendRequest=etiqueta=>callServer('socialAction',{accion:'enviar',etiqueta});
-export const friendAction=(accion,otroUid)=>callServer('socialAction',{accion,otroUid});
+async function resolveTarget(value){const text=String(value||'').trim();let path;
+  if(text.startsWith('@'))path=`usernames/${validateUsername(text.slice(1)).toLowerCase()}`;
+  else {const code=text.toUpperCase();if(!/^[A-Z2-9]{6}$/.test(code))throw new Error('Elige @nombre o un código de 6 caracteres.');path=`friendcodes/${code}`;}
+  const target=(await readData(path)).val();if(!target)throw Object.assign(new Error('Jugador no encontrado.'),{code:'not-found'});return target;
+}
+export const sendRequest=async etiqueta=>friendAction('enviar',await resolveTarget(etiqueta));
+export async function friendAction(accion,other){
+  const uid=currentUser()?.uid;if(!uid)throw new Error('Inicia sesión.');if(!other||other===uid||/[.#$\[\]/]/.test(other))throw new Error('Elige otro jugador.');
+  const {r,db}=await databaseService(),mine=(await readData(`social/${uid}`)).val()||{},patch={};
+  if(accion==='enviar'){
+    const p=(await readData(`users/${other}`)).val();if(!p)throw new Error('Perfil no disponible.');if(!p.preferencias?.solicitudes)throw new Error('No recibe solicitudes.');
+    if(mine.confirmados?.[other]||mine.pendientes?.[other])throw Object.assign(new Error(mine.confirmados?.[other]?'Ya sois amigos.':'Solicitud pendiente.'),{code:'already-exists'});
+    const rate=(await readData(`socialLimits/${uid}`)).val()||{};let slot=-1;for(let i=0;i<SOCIAL.solicitudesHora;i++)if(!rate[i]||rate[i].t<=socialNow()-3600000){slot=i;break;}
+    if(slot<0)throw new Error('Límite de solicitudes por hora.');
+    const pending={de:uid,fecha:r.serverTimestamp(),slot};
+    patch[`social/${uid}/pendientes/${other}`]=pending;patch[`social/${other}/pendientes/${uid}`]=pending;patch[`socialLimits/${uid}/${slot}`]={t:r.serverTimestamp(),dest:other};
+  }else{
+    const pending=mine.pendientes?.[other],confirmed=mine.confirmados?.[other];
+    if(accion==='aceptar'){
+      if(!pending||pending.de===uid)throw new Error('Solicitud no disponible.');
+      patch[`social/${uid}/confirmados/${other}`]=true;patch[`social/${other}/confirmados/${uid}`]=true;
+    }else if(accion==='eliminar'){
+      if(!confirmed)throw new Error('Solicitud no disponible.');patch[`social/${uid}/confirmados/${other}`]=null;patch[`social/${other}/confirmados/${uid}`]=null;
+    }else if(!pending||!['rechazar','cancelar'].includes(accion)||accion==='cancelar'&&pending.de!==uid||accion==='rechazar'&&pending.de===uid)throw new Error('Solicitud no disponible.');
+    if(accion!=='eliminar'){patch[`social/${uid}/pendientes/${other}`]=null;patch[`social/${other}/pendientes/${uid}`]=null;}
+  }
+  const counts=await Promise.all([readData(`socialCounts/${uid}`),readData(`socialCounts/${other}`)]);
+  for(const [i,person]of [uid,other].entries()){
+    const old=counts[i].val();if(!old)throw new Error('Perfil no disponible.');
+    const friendsDelta=accion==='aceptar'?1:accion==='eliminar'?-1:0,pendingDelta=accion==='enviar'?1:['aceptar','rechazar','cancelar'].includes(accion)?-1:0;
+    const amigos=old.amigos+friendsDelta,pendientes=old.pendientes+pendingDelta;
+    if(amigos>SOCIAL.amigosMax||pendientes>SOCIAL.pendientesMax||accion==='enviar'&&amigos>=SOCIAL.amigosMax)throw new Error('Límite de amigos o solicitudes.');
+    patch[`socialCounts/${person}`]={amigos,pendientes,otroUid:person===uid?other:uid,accion,fecha:r.serverTimestamp()};
+  }
+  try{await withDeadline(r.update(r.ref(db),patch));return {ok:true,uid:other};}
+  catch(error){if(/permission.denied/i.test(error.code||error.message))throw new Error('Solicitud rechazada. Revisa los límites o reintenta.');throw error;}
+}
 export async function setPresence(estado='enLinea',sala='') {
   const user=currentUser();if(!user)return;const {r,db}=await databaseService(),ref=r.ref(db,`presencia/${user.uid}`);
   await r.onDisconnect(ref).set({estado:'desconectado',sala:'',t:r.serverTimestamp()});await r.set(ref,{estado,sala,t:r.serverTimestamp()});
 }
 export async function stopFriends() {
   generation++;for(const stop of [...stops.splice(0),...peerStops.splice(0)])stop();list=[];presence={};seen.clear();
+  if(currentUser())try{const {r,db}=await databaseService();await r.onDisconnect(r.ref(db,`presencia/${currentUser().uid}`)).cancel();}catch{}
 }
 export async function startFriends(changed=()=>{},invite=()=>{}) {
   await stopFriends();onChange=changed;invitationCallback=invite;const user=currentUser();if(!user)return;
-  const token=generation,{f,db}=await firestoreService(),realtime=await databaseService(),r=realtime.r;
+  const token=generation,realtime=await databaseService(),r=realtime.r;
   stops.push(r.onValue(r.ref(realtime.db,'.info/serverTimeOffset'),s=>serverOffset=s.val()||0));
   stops.push(r.onValue(r.ref(realtime.db,'.info/connected'),s=>{if(s.val())setPresence().catch(()=>{});}));
-  stops.push(f.onSnapshot(f.collection(db,'users',user.uid,'amigos'),async snapshot=>{
+  stops.push(r.onValue(r.ref(realtime.db,`social/${user.uid}`),async snapshot=>{
     const revision=++startFriends.revision;
-    const profiles=await Promise.all(snapshot.docs.map(async doc=>{const p=await readProfile(doc.id);return p?{...p,estado:doc.data().estado}:null;}));
+    const social=snapshot.val()||{},entries=[...Object.keys(social.confirmados||{}).map(uid=>[uid,'amigos']),...Object.entries(social.pendientes||{}).map(([uid,p])=>[uid,p.de===user.uid?'pendienteEnviada':'pendienteRecibida'])];
+    const profiles=await Promise.all(entries.map(async([uid,estado])=>{const p=await readProfile(uid);return p?{...p,estado}:null;}));
     if(token!==generation||revision!==startFriends.revision)return;list=profiles.filter(Boolean);for(const stop of peerStops.splice(0))stop();
     for(const p of list.filter(p=>p.estado==='amigos'))peerStops.push(r.onValue(r.ref(realtime.db,`presencia/${p.uid}`),snap=>{presence[p.uid]=snap.val();onChange(friendList());}));onChange(friendList());
   },error=>changed([],authError(error))));
   stops.push(r.onValue(r.ref(realtime.db,`invitaciones/${user.uid}`),snapshot=>{
-    snapshot.forEach(s=>{const invitation={id:s.key,...s.val()};if(invitation.caducaEn<=socialNow()||seen.has(s.key))return;seen.add(s.key);invitationCallback(invitation);});
+    snapshot.forEach(s=>{const invitation={id:s.key,...s.val()};if(invitation.caducaEn<=socialNow()){dismissInvitation(s.key).catch(()=>{});return;}if(seen.has(s.key))return;seen.add(s.key);invitationCallback(invitation);});
   }));
 }
 startFriends.revision=0;
 export async function inviteFriend(uid,room) {
   const user=currentUser();if(!user||!friendIds().includes(uid))throw new Error('Solo puedes invitar a amigos.');
   const {r,db}=await databaseService(),ref=r.push(r.ref(db,`invitaciones/${uid}`));
-  await withDeadline(r.set(ref,{de:user.uid,nombre:getProfile().nombre,sala:room.code,modo:room.meta.modo,dificultad:room.meta.dificultad,creadoEn:r.serverTimestamp(),caducaEn:socialNow()+SOCIAL.invitacionMs}));
+  await withDeadline(r.update(r.ref(db),{[`invitaciones/${uid}/${ref.key}`]:{de:user.uid,nombre:getProfile().nombre,sala:room.code,modo:room.meta.modo,dificultad:room.meta.dificultad,creadoEn:r.serverTimestamp(),caducaEn:socialNow()+SOCIAL.invitacionMs-1000},[`enviadas/${user.uid}/${ref.key}`]:{dest:uid}}));
 }
-export async function dismissInvitation(id) {const user=currentUser();if(!user)return;const {r,db}=await databaseService();await r.remove(r.ref(db,`invitaciones/${user.uid}/${id}`));}
-export async function requestsEnabled(value) {const user=currentUser();if(!user)return;const {f,db}=await firestoreService();await withDeadline(f.updateDoc(f.doc(db,'users',user.uid),{'preferencias.solicitudes':value}));}
+export async function dismissInvitation(id) {const user=currentUser();if(!user)return;const {r,db}=await databaseService(),p=(await readData(`invitaciones/${user.uid}/${id}`)).val();if(p)await withDeadline(r.update(r.ref(db),{[`invitaciones/${user.uid}/${id}`]:null,[`enviadas/${p.de}/${id}`]:null}));}
+export async function requestsEnabled(value) {const user=currentUser();if(!user)return;const {r,db}=await databaseService();await withDeadline(r.set(r.ref(db,`users/${user.uid}/preferencias/solicitudes`),!!value));}
 export function renderFriends(root,openProfile,inviteRoom=null) {
   root.replaceChildren();const friends=friendList().filter(p=>!inviteRoom||p.estado==='amigos'&&p.presencia!=='desconectado');
   if(!friends.length){root.textContent=inviteRoom?'Ningún amigo en línea.':'Sin amigos ni solicitudes.';return;}

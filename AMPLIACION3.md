@@ -35,8 +35,8 @@ js/scoring.js usa 400 × min(1, p / PRECISION_REF) con PRECISION_REF = 0.6 en js
 
 js/firebase.js confirma y escribe con IDs estables, lee directamente del servidor y conserva la lectura de registros antiguos sin avatar. js/ui.js muestra errores y reintenta la carga de los tres rankings. SOLO y el podio online permiten reintentar el envío sin duplicar un resultado que ya se guardó.
 
-Publica todos los archivos juntos y las reglas completas de ambas bases. La prueba de producción fue solo de lectura; las escrituras se verifican con el SDK real en emuladores.
+Publica todos los archivos juntos y las reglas activas indicadas en README.md. En la versión 1.3.1 solo se utiliza Realtime Database. La prueba de producción fue solo de lectura; las escrituras se verifican con el SDK real en emuladores.
 
 ## Pruebas
 
-npm test valida catálogo, 1.680 combinaciones de victoria, lore, imágenes, selección, sonido, dificultad y puntuación. tests/expansion-ui.cjs comprueba libro, PNG, debug, audio y los rankings. tests/ui.cjs recorre tres partidas; tests/online-ui.cjs prueba los dos modos online. El detalle y el checklist están en PRUEBAS.md.
+npm test valida catálogo, 1.680 combinaciones de victoria, lore, imágenes, selección, sonido, dificultad y puntuación. tests/accounts-ui.cjs comprueba tres partidas, herramientas del lienzo, cuentas, rankings y los dos modos online; tests/ui.cjs aporta los helpers de navegador. El detalle y el checklist están en PRUEBAS.md.
