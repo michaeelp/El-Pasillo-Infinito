@@ -1,0 +1,464 @@
+[
+  {
+    "id": 1,
+    "nombre": "El Descarnado",
+    "imagen": "assets/monsters/01-el-descarnado.webp",
+    "descripcion": "Cráneo agrietado, mandíbula expuesta y ojos amarillos hundidos.",
+    "anotacion": "La oscuridad le prestó una cara. La luz viene a cobrarla.",
+    "debilidades": [
+      {
+        "en": "flashlight",
+        "es": "linterna"
+      },
+      {
+        "en": "candle",
+        "es": "vela"
+      },
+      {
+        "en": "sun",
+        "es": "sol"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "nombre": "Madre Araña",
+    "imagen": "assets/monsters/02-madre-arana.webp",
+    "descripcion": "Ocho ojos negros y patas que enmarcan una cara cubierta de telarañas.",
+    "anotacion": "Cuenta sus ojos. Si cuentas nueve, uno es tuyo.",
+    "debilidades": [
+      {
+        "en": "broom",
+        "es": "escoba"
+      },
+      {
+        "en": "shoe",
+        "es": "zapato"
+      },
+      {
+        "en": "umbrella",
+        "es": "paraguas"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "nombre": "Cíclope Hueco",
+    "imagen": "assets/monsters/03-ciclope-hueco.webp",
+    "descripcion": "Un único ojo gigantesco sobre una boca hueca.",
+    "anotacion": "Ve todo, excepto aquello que lo está mirando.",
+    "debilidades": [
+      {
+        "en": "eye",
+        "es": "ojo"
+      },
+      {
+        "en": "star",
+        "es": "estrella"
+      },
+      {
+        "en": "cat",
+        "es": "gato"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "nombre": "Sombra Sonriente",
+    "imagen": "assets/monsters/04-sombra-sonriente.webp",
+    "descripcion": "Una capucha vacía, dos destellos y una sonrisa imposible.",
+    "anotacion": "Si sonríe, no le devuelvas el gesto. Enciende algo.",
+    "debilidades": [
+      {
+        "en": "sun",
+        "es": "sol"
+      },
+      {
+        "en": "flashlight",
+        "es": "linterna"
+      },
+      {
+        "en": "lightning bolt",
+        "es": "rayo"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "nombre": "Devora-Luz",
+    "imagen": "assets/monsters/05-devora-luz.webp",
+    "descripcion": "Un vacío sin rostro, rodeado por una boca circular.",
+    "anotacion": "No traga la luz. La recuerda. Y eso le duele.",
+    "debilidades": [
+      {
+        "en": "flashlight",
+        "es": "linterna"
+      },
+      {
+        "en": "sun",
+        "es": "sol"
+      },
+      {
+        "en": "star",
+        "es": "estrella"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "nombre": "Rey Cuervo",
+    "imagen": "assets/monsters/06-rey-cuervo.webp",
+    "descripcion": "Cráneo de cuervo coronado por astas retorcidas.",
+    "anotacion": "Perdió su reino detrás de una puerta pequeña.",
+    "debilidades": [
+      {
+        "en": "sword",
+        "es": "espada"
+      },
+      {
+        "en": "key",
+        "es": "llave"
+      },
+      {
+        "en": "smiley face",
+        "es": "cara sonriente"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "nombre": "Niño Sin Rostro",
+    "imagen": "assets/monsters/07-nino-sin-rostro.webp",
+    "descripcion": "Cabeza alargada sin ojos y una boca diminuta.",
+    "anotacion": "Le borraron el nombre. No dejes que borre el tuyo.",
+    "debilidades": [
+      {
+        "en": "heart",
+        "es": "corazón"
+      },
+      {
+        "en": "hand",
+        "es": "mano"
+      },
+      {
+        "en": "face",
+        "es": "cara"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "nombre": "La Novia Cosida",
+    "imagen": "assets/monsters/08-la-novia-cosida.webp",
+    "descripcion": "Velo podrido, rostro suturado y labios cosidos.",
+    "anotacion": "Aún espera una promesa que no termine en hilo negro.",
+    "debilidades": [
+      {
+        "en": "scissors",
+        "es": "tijeras"
+      },
+      {
+        "en": "flower",
+        "es": "flor"
+      },
+      {
+        "en": "heart",
+        "es": "corazón"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "nombre": "Gárgola Llorona",
+    "imagen": "assets/monsters/09-gargola-llorona.webp",
+    "descripcion": "Piedra con cuernos, boca ancha y lágrimas negras.",
+    "anotacion": "Cada lágrima pesa lo mismo que una tumba.",
+    "debilidades": [
+      {
+        "en": "umbrella",
+        "es": "paraguas"
+      },
+      {
+        "en": "cloud",
+        "es": "nube"
+      },
+      {
+        "en": "hammer",
+        "es": "martillo"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "nombre": "Comeduermes",
+    "imagen": "assets/monsters/10-comeduermes.webp",
+    "descripcion": "Tres ojos insomnes y una boca vertical entre protuberancias.",
+    "anotacion": "No cierres los ojos. Él ya cerró los suyos por ti.",
+    "debilidades": [
+      {
+        "en": "clock",
+        "es": "reloj"
+      },
+      {
+        "en": "bed",
+        "es": "cama"
+      },
+      {
+        "en": "moon",
+        "es": "luna"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "nombre": "Hongo Podrido",
+    "imagen": "assets/monsters/11-hongo-podrido.webp",
+    "descripcion": "Hongos, esporas y cuatro ojos bajo una corona húmeda.",
+    "anotacion": "Bajo la piel del pasillo crece un bosque sin cielo.",
+    "debilidades": [
+      {
+        "en": "mushroom",
+        "es": "hongo"
+      },
+      {
+        "en": "axe",
+        "es": "hacha"
+      },
+      {
+        "en": "sun",
+        "es": "sol"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "nombre": "Verdugo Hueco",
+    "imagen": "assets/monsters/12-verdugo-hueco.webp",
+    "descripcion": "Capucha de arpillera, ojos vacíos y una ranura por boca.",
+    "anotacion": "La sentencia está escrita. Todavía puedes cambiar una palabra.",
+    "debilidades": [
+      {
+        "en": "book",
+        "es": "libro"
+      },
+      {
+        "en": "key",
+        "es": "llave"
+      },
+      {
+        "en": "heart",
+        "es": "corazón"
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "nombre": "Payaso Abisal",
+    "imagen": "assets/monsters/13-payaso-abisal.webp",
+    "descripcion": "Cabello en corona, sonrisa descomunal y dientes torcidos.",
+    "anotacion": "Aquí nadie ríe. Ese sonido viene de muy abajo.",
+    "debilidades": [
+      {
+        "en": "smiley face",
+        "es": "cara sonriente"
+      },
+      {
+        "en": "pizza",
+        "es": "pizza"
+      },
+      {
+        "en": "cookie",
+        "es": "galleta"
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "nombre": "Reptante",
+    "imagen": "assets/monsters/14-reptante.webp",
+    "descripcion": "Cabeza de reptil alargada, escamas y pupilas rasgadas.",
+    "anotacion": "Nunca escuchas sus pasos. Solo los que deja de dar.",
+    "debilidades": [
+      {
+        "en": "cat",
+        "es": "gato"
+      },
+      {
+        "en": "bird",
+        "es": "pájaro"
+      },
+      {
+        "en": "hat",
+        "es": "sombrero"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "nombre": "Ojo Múltiple",
+    "imagen": "assets/monsters/15-ojo-multiple.webp",
+    "descripcion": "Seis ojos de distintos tamaños en una masa deforme.",
+    "anotacion": "Cada ojo conserva lo último que vio su dueño.",
+    "debilidades": [
+      {
+        "en": "eye",
+        "es": "ojo"
+      },
+      {
+        "en": "hand",
+        "es": "mano"
+      },
+      {
+        "en": "camera",
+        "es": "cámara"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "nombre": "Espectro Mojado",
+    "imagen": "assets/monsters/16-espectro-mojado.webp",
+    "descripcion": "Cabello chorreante, piel azulada y boca en forma de O.",
+    "anotacion": "El agua sube cuando recuerdas su nombre.",
+    "debilidades": [
+      {
+        "en": "sun",
+        "es": "sol"
+      },
+      {
+        "en": "bird",
+        "es": "pájaro"
+      },
+      {
+        "en": "cup",
+        "es": "taza"
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "nombre": "Ciervo Pálido",
+    "imagen": "assets/monsters/17-ciervo-palido.webp",
+    "descripcion": "Cráneo blanco, astas retorcidas y boca vertical.",
+    "anotacion": "El último árbol del mundo todavía lo está esperando.",
+    "debilidades": [
+      {
+        "en": "tree",
+        "es": "árbol"
+      },
+      {
+        "en": "flower",
+        "es": "flor"
+      },
+      {
+        "en": "apple",
+        "es": "manzana"
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "nombre": "Santo Podrido",
+    "imagen": "assets/monsters/18-santo-podrido.webp",
+    "descripcion": "Aureola de pinchos sobre una boca sellada.",
+    "anotacion": "No le reces. Ya conoce todas las respuestas.",
+    "debilidades": [
+      {
+        "en": "book",
+        "es": "libro"
+      },
+      {
+        "en": "bell",
+        "es": "campana"
+      },
+      {
+        "en": "star",
+        "es": "estrella"
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "nombre": "El Mordedor",
+    "imagen": "assets/monsters/19-el-mordedor.webp",
+    "descripcion": "Tres ojos, cuernos y unas mandíbulas desmesuradas.",
+    "anotacion": "Tiene hambre de todo lo que aún puede gritar.",
+    "debilidades": [
+      {
+        "en": "banana",
+        "es": "banana"
+      },
+      {
+        "en": "apple",
+        "es": "manzana"
+      },
+      {
+        "en": "carrot",
+        "es": "zanahoria"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "nombre": "Larva Real",
+    "imagen": "assets/monsters/20-larva-real.webp",
+    "descripcion": "Gusano coronado, cuatro ojos y boca circular dentada.",
+    "anotacion": "Su corona es lo único que no consiguió digerir.",
+    "debilidades": [
+      {
+        "en": "fish",
+        "es": "pez"
+      },
+      {
+        "en": "bird",
+        "es": "pájaro"
+      },
+      {
+        "en": "saw",
+        "es": "sierra"
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "nombre": "Muñeco de Ceniza",
+    "imagen": "assets/monsters/21-muneco-de-ceniza.webp",
+    "descripcion": "Muñeco agrietado de ceniza, ojos de brasa y boca cosida.",
+    "anotacion": "Alguien lo dejó en casa. La casa ardió hace cien años.",
+    "debilidades": [
+      {
+        "en": "house",
+        "es": "casa"
+      },
+      {
+        "en": "door",
+        "es": "puerta"
+      },
+      {
+        "en": "ladder",
+        "es": "escalera"
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "nombre": "Voz del Pozo",
+    "imagen": "assets/monsters/22-voz-del-pozo.webp",
+    "descripcion": "Cabello negro goteante sobre una cara sin ojos y boca abismal.",
+    "anotacion": "Si te llama desde abajo, no le digas dónde estás.",
+    "debilidades": [
+      {
+        "en": "bell",
+        "es": "campana"
+      },
+      {
+        "en": "heart",
+        "es": "corazón"
+      },
+      {
+        "en": "key",
+        "es": "llave"
+      }
+    ]
+  }
+]

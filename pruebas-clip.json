@@ -1,0 +1,132 @@
+[
+  {
+    "expected": "sun",
+    "backend": "wasm",
+    "top5": [
+      {
+        "score": 0.7797015905380249,
+        "label": "sun"
+      },
+      {
+        "score": 0.045330960303545,
+        "label": "flashlight"
+      },
+      {
+        "score": 0.029981084167957306,
+        "label": "lightning bolt"
+      },
+      {
+        "score": 0.0226940605789423,
+        "label": "umbrella"
+      },
+      {
+        "score": 0.018368294462561607,
+        "label": "star"
+      }
+    ]
+  },
+  {
+    "expected": "heart",
+    "backend": "wasm",
+    "top5": [
+      {
+        "score": 0.7351605296134949,
+        "label": "heart"
+      },
+      {
+        "score": 0.03214103728532791,
+        "label": "apple"
+      },
+      {
+        "score": 0.027771059423685074,
+        "label": "smiley face"
+      },
+      {
+        "score": 0.016723472625017166,
+        "label": "cookie"
+      },
+      {
+        "score": 0.015596198849380016,
+        "label": "camera"
+      }
+    ]
+  },
+  {
+    "expected": "key",
+    "backend": "wasm",
+    "top5": [
+      {
+        "score": 0.5790739059448242,
+        "label": "key"
+      },
+      {
+        "score": 0.04475519433617592,
+        "label": "hammer"
+      },
+      {
+        "score": 0.0379854179918766,
+        "label": "scissors"
+      },
+      {
+        "score": 0.03713033348321915,
+        "label": "door"
+      },
+      {
+        "score": 0.03631901368498802,
+        "label": "bell"
+      }
+    ]
+  },
+  {
+    "expected": "apple",
+    "backend": "wasm",
+    "top5": [
+      {
+        "score": 0.9957308173179626,
+        "label": "apple"
+      },
+      {
+        "score": 0.000717388466000557,
+        "label": "carrot"
+      },
+      {
+        "score": 0.00039223438943736255,
+        "label": "camera"
+      },
+      {
+        "score": 0.00026992938364855945,
+        "label": "heart"
+      },
+      {
+        "score": 0.00023346277885138988,
+        "label": "key"
+      }
+    ]
+  },
+  {
+    "expected": "umbrella",
+    "backend": "wasm",
+    "top5": [
+      {
+        "score": 0.8896926641464233,
+        "label": "umbrella"
+      },
+      {
+        "score": 0.020433219149708748,
+        "label": "smiley face"
+      },
+      {
+        "score": 0.009692241437733173,
+        "label": "hat"
+      },
+      {
+        "score": 0.007467132061719894,
+        "label": "scissors"
+      },
+      {
+        "score": 0.007340016309171915,
+        "label": "key"
+      }
+    ]
+  }
+]
