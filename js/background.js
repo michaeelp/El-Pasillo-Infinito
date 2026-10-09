@@ -1,4 +1,4 @@
-import { VERSION, ASSET_TIMEOUT_MS } from './config.js?v=1.2.0';
+import { VERSION, ASSET_TIMEOUT_MS } from './config.js?v=1.3.0';
 export class Background {
   constructor(node = document.getElementById('corridor')) {
     this.node = node; this.cache = new Map(); this.variant = 'hospital';

@@ -1,0 +1,424 @@
+// RTDB 1.3.0: mismo contenido que database.rules.json, con comentarios.
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    // Salas: cuenta no anónima, anfitrión, identidad propia, claims, tiempos y campos acotados.
+    "rooms": {
+      ".indexOn": [
+        "meta/expiresAt"
+      ],
+      "$code": {
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && !newData.exists() && data.child('meta/expiresAt').isNumber() && data.child('meta/expiresAt').val() < now",
+        ".validate": "newData.child('meta/expiresAt').val() > now",
+        "meta": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && (!data.exists() || data.child('expiresAt').val() > now)",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && ((!data.exists() && newData.child('host').val() == auth.uid && newData.child('estado').val() == 'lobby') || (data.child('expiresAt').val() > now && data.child('host').val() == auth.uid))",
+          ".validate": "newData.hasChildren(['host','modo','estado','ronda','pasillos','vidas','inicioFase','semilla','createdAt','expiresAt','uniqueAvatars','dificultad','personalizada'])",
+          "host": {
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && newData.val() == auth.uid && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists() && (!root.child('rooms').child($code).child('jugadores').child(data.val()).exists() || root.child('rooms').child($code).child('jugadores').child(data.val()).child('ausente').val() == true)",
+            ".validate": "newData.isString() && newData.val().length <= 128"
+          },
+          "modo": {
+            ".validate": "newData.val() == 'race' || newData.val() == 'coop'"
+          },
+          "estado": {
+            ".validate": "newData.val() == 'lobby' || newData.val() == 'round' || newData.val() == 'reveal' || newData.val() == 'podium' || newData.val() == 'paused'"
+          },
+          "ronda": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 2000"
+          },
+          "pasillos": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 2000"
+          },
+          "vidas": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 5"
+          },
+          "inicioFase": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000"
+          },
+          "semilla": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 4294967295 && (!data.exists() || root.child('rooms').child($code).child('meta/estado').val() == 'lobby' || newData.val() == data.val())"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+          },
+          "expiresAt": {
+            ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 10860000"
+          },
+          "uniqueAvatars": {
+            ".validate": "newData.isBoolean()"
+          },
+          "revision": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0"
+          },
+          "match": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0"
+          },
+          "lastMonster": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 30"
+          },
+          "ok": {
+            ".validate": "newData.isBoolean()"
+          },
+          "previousState": {
+            ".validate": "newData.val() == 'round' || newData.val() == 'reveal'"
+          },
+          "pausedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "endedByDisconnect": {
+            ".validate": "newData.isBoolean()"
+          },
+          "roles": {
+            "$uid": {
+              ".validate": "root.child('rooms').child($code).child('jugadores').child($uid).exists() && (newData.val() == 'vigia' || newData.val() == 'bibliotecario' || newData.val() == 'dibujante')"
+            }
+          },
+          "board": {
+            "$uid": {
+              ".validate": "newData.hasChildren(['points','lives','streak','precision','attempts'])",
+              "points": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 50000"
+              },
+              "lives": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 5"
+              },
+              "streak": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              "precision": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              "attempts": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              "gained": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1200"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          },
+          "dificultad": {
+            ".validate": "newData.isString() && newData.val().matches(/^(facil|normal|dificil|pesadilla)$/) && (!data.exists() || root.child('rooms').child($code).child('meta/estado').val() == 'lobby' || newData.val() == data.val())"
+          },
+          "personalizada": {
+            ".validate": "newData.isBoolean() && (!data.exists() || root.child('rooms').child($code).child('meta/estado').val() == 'lobby' || newData.val() == data.val())"
+          }
+        },
+        "jugadores": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
+          "$uid": {
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('meta/expiresAt').val() > now && (data.exists() || root.child('rooms').child($code).child('meta/estado').val() == 'lobby')",
+            ".validate": "newData.hasChildren(['slot','nombre','avatar','rol','listo','iaLista','progreso','ausente','changed'])",
+            "nombre": {
+              ".validate": "newData.isString() && newData.val() == root.child('cuentas').child($uid).child('nombre').val()"
+            },
+            "avatar": {
+              ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 12 && (root.child('rooms').child($code).child('meta/uniqueAvatars').val() == false || root.child('rooms').child($code).child('claims/avatars').child(newData.val()+'').val() == auth.uid)"
+            },
+            "rol": {
+              ".validate": "newData.val() == '' || ((newData.val() == 'vigia' || newData.val() == 'bibliotecario' || newData.val() == 'dibujante') && root.child('rooms').child($code).child('claims/roles').child(newData.val()).val() == auth.uid)"
+            },
+            "listo": {
+              ".validate": "newData.isBoolean() && (newData.val() == false || (newData.parent().child('iaLista').val() == true && newData.parent().child('ausente').val() == false))"
+            },
+            "iaLista": {
+              ".validate": "newData.isBoolean()"
+            },
+            "progreso": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "ausente": {
+              ".validate": "newData.isBoolean()"
+            },
+            "changed": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+            },
+            "readyRevision": {
+              ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0"
+            },
+            "$other": {
+              ".validate": false
+            },
+            "slot": {
+              ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= (root.child('rooms').child($code).child('meta/modo').val() == 'coop' ? 3 : 8) && root.child('rooms').child($code).child('claims/slots').child(newData.val()+'').val() == auth.uid"
+            }
+          }
+        },
+        "claims": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
+          "$type": {
+            "$id": {
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('meta/estado').val() == 'lobby' && root.child('rooms').child($code).child('meta/expiresAt').val() > now && ((!data.exists() && newData.val() == auth.uid) || data.val() == auth.uid)",
+              ".validate": "newData.val() == auth.uid && (($type == 'slots' && ($id.matches(/^[1-3]$/) || (root.child('rooms').child($code).child('meta/modo').val() == 'race' && $id.matches(/^[4-8]$/)))) || ($type == 'avatars' && $id.matches(/^([1-9]|1[0-2])$/)) || ($type == 'roles' && ($id == 'vigia' || $id == 'bibliotecario' || $id == 'dibujante')))"
+            }
+          }
+        },
+        "secreto": {
+          "$round": {
+            "$uid": {
+              ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('meta/modo').val() == 'coop' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia' && root.child('rooms').child($code).child('meta/expiresAt').val() > now",
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia' && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
+              ".validate": "newData.hasChildren(['monstruoId'])",
+              "monstruoId": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 30"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "entregas": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          "$round": {
+            "$uid": {
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && (root.child('rooms').child($code).child('meta/modo').val() == 'race' || root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante') && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
+              ".validate": "newData.hasChildren(['ms','t'])",
+              "ms": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 75000"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() <= now + 5000 && newData.val() >= now - 12000"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "resultados": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          "$round": {
+            "$uid": {
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && (root.child('rooms').child($code).child('meta/modo').val() == 'race' || root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante') && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
+              ".validate": "newData.hasChildren(['etiqueta','confianza','precision','ms','miniatura','timeout','t']) && (newData.child('timeout').val() == true || root.child('rooms').child($code).child('entregas').child($round).child($uid).exists())",
+              "etiqueta": {
+                ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^(alarm_clock|apple|axe|ball|balloon|bandage|bell|bird|bone|book|broom|bucket|cake|camera|candle|cat|cheese|coffee_cup|coin|cross|crown|diamond|dog|fire|fishing_hook|fishing_net|flashlight|flower|hammer|heart|house|ice_cream|lamp|life_ring|magnet|mirror|mousetrap|paintbrush|pencil|ring|rope|saw|scales|scissors|seagull|shoe|shovel|smiley_face|snowflake|sun|sunglasses|teddy_bear|toothbrush|towel|tree|umbrella)$/))"
+              },
+              "confianza": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+              },
+              "precision": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+              },
+              "ms": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 75000"
+              },
+              "miniatura": {
+                ".validate": "newData.isString() && newData.val().length <= 20000 && (newData.val() == '' || newData.val().matches(/^data:image[/](webp|png|jpeg);base64,[A-Za-z0-9+=/]+$/))"
+              },
+              "distribution": {
+                "$label": {
+                  ".validate": "$label.matches(/^(alarm_clock|apple|axe|ball|balloon|bandage|bell|bird|bone|book|broom|bucket|cake|camera|candle|cat|cheese|coffee_cup|coin|cross|crown|diamond|dog|fire|fishing_hook|fishing_net|flashlight|flower|hammer|heart|house|ice_cream|lamp|life_ring|magnet|mirror|mousetrap|paintbrush|pencil|ring|rope|saw|scales|scissors|seagull|shoe|shovel|smiley_face|snowflake|sun|sunglasses|teddy_bear|toothbrush|towel|tree|umbrella)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+                }
+              },
+              "timeout": {
+                ".validate": "newData.isBoolean()"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() <= now + 5000 && newData.val() >= now - 12000"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "veredictos": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          "$round": {
+            "$uid": {
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia'",
+              ".validate": "newData.hasChildren(['monstruoId','ok','precision']) && newData.child('monstruoId').val() == root.child('rooms').child($code).child('secreto').child($round).child($uid).child('monstruoId').val()",
+              "monstruoId": {
+                ".validate": "newData.isNumber()"
+              },
+              "ok": {
+                ".validate": "newData.isBoolean()"
+              },
+              "precision": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "live": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          "$round": {
+            "$uid": {
+              ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante' && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
+              ".validate": "newData.hasChildren(['miniatura','t']) && (!data.exists() || newData.child('t').val() >= data.child('t').val() + 300)",
+              "miniatura": {
+                ".validate": "newData.isString() && newData.val().length <= 20000 && newData.val().matches(/^data:image[/](webp|png|jpeg);base64,[A-Za-z0-9+=/]+$/)"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() <= now + 5000 && newData.val() >= now - 12000"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "chat": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          "$uid": {
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('jugadores').child($uid).exists()",
+            ".validate": "!data.child('__last').exists() || newData.child('__last').val() >= data.child('__last').val() + 1000",
+            "__last": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 5000"
+            },
+            "$message": {
+              ".validate": "$message.matches(/^([0-9]|[12][0-9])$/) && newData.hasChildren(['uid','texto','t','tipo']) && newData.child('uid').val() == $uid && newData.child('t').val() == newData.parent().child('__last').val() && (!data.parent().child('__last').exists() || newData.child('t').val() >= data.parent().child('__last').val() + 1000)",
+              "uid": {
+                ".validate": "newData.val() == $uid"
+              },
+              "texto": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60 && !newData.val().matches(/.*[<>].*/)"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() <= now + 5000 && newData.val() >= now - 12000"
+              },
+              "tipo": {
+                ".validate": "newData.val() == 'chat'"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "whispers": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          "$uid": {
+            ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && root.child('rooms').child($code).child('meta/board').child($uid).child('lives').val() == 0",
+            ".validate": "!data.child('__last').exists() || newData.child('__last').val() >= data.child('__last').val() + 20000",
+            "__last": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 5000"
+            },
+            "$message": {
+              ".validate": "$message.matches(/^([0-9]|[12][0-9])$/) && newData.hasChildren(['uid','texto','t','tipo']) && newData.child('uid').val() == $uid && newData.child('t').val() == newData.parent().child('__last').val() && (!data.parent().child('__last').exists() || newData.child('t').val() >= data.parent().child('__last').val() + 20000)",
+              "uid": {
+                ".validate": "newData.val() == $uid"
+              },
+              "texto": {
+                ".validate": "newData.isString() && newData.val().length <= 60"
+              },
+              "t": {
+                ".validate": "newData.isNumber() && newData.val() <= now + 5000 && newData.val() >= now - 12000"
+              },
+              "tipo": {
+                ".validate": "newData.val() == 'step' || newData.val() == 'breath' || newData.val() == 'message'"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "audits": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && root.child('rooms').child($code).child('jugadores').child(auth.uid).exists()",
+          "$round": {
+            "$uid": {
+              "$target": {
+                ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid && $target != $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists()",
+                ".validate": "newData.hasChildren(['precision','ok','t'])",
+                "precision": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+                },
+                "ok": {
+                  ".validate": "newData.isBoolean()"
+                },
+                "t": {
+                  ".validate": "newData.isNumber() && newData.val() <= now + 5000"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    // Identidad reflejada por Admin. Clientes sin acceso directo; las reglas consultan activo/nombre.
+    "cuentas": {
+      ".read": false,
+      ".write": false
+    },
+    // Espejo confirmado mutuo desde Firestore. Solo Admin escribe; lectura de la propia cuenta.
+    "amigos": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid",
+        ".write": false
+      }
+    },
+    // Escritura propia y onDisconnect; lectura propia o de amigos confirmados.
+    "presencia": {
+      "$uid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && (auth.uid == $uid || root.child('amigos').child(auth.uid).child($uid).val() == true)",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $uid",
+        ".validate": "newData.hasChildren(['estado','sala','t'])",
+        "estado": {
+          ".validate": "newData.val() == 'enLinea' || newData.val() == 'enSala' || newData.val() == 'desconectado'"
+        },
+        "sala": {
+          ".validate": "newData.isString() && (newData.val() == '' || (newData.val().matches(/^[A-Z]{4}$/) && root.child('rooms').child(newData.val()).child('jugadores').child($uid).exists()))"
+        },
+        "t": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 5000 && newData.val() >= now - 15000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    // Solo entre amigos mutuos, emisor miembro del lobby, destino propio y caducidad de dos minutos.
+    "invitaciones": {
+      "$dest": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && auth.uid == $dest",
+        "$id": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && root.child('cuentas').child(auth.uid).child('activo').val() == true && ((!newData.exists() && auth.uid == $dest) || (!data.exists() && newData.child('de').val() == auth.uid && root.child('amigos').child(auth.uid).child($dest).val() == true && root.child('amigos').child($dest).child(auth.uid).val() == true && root.child('rooms').child(newData.child('sala').val()).child('jugadores').child(auth.uid).exists() && root.child('rooms').child(newData.child('sala').val()).child('meta/estado').val() == 'lobby'))",
+          ".validate": "newData.hasChildren(['de','nombre','sala','modo','dificultad','creadoEn','caducaEn'])",
+          "de": {
+            ".validate": "newData.val() == auth.uid"
+          },
+          "nombre": {
+            ".validate": "newData.val() == root.child('cuentas').child(auth.uid).child('nombre').val()"
+          },
+          "sala": {
+            ".validate": "newData.isString() && newData.val().matches(/^[A-Z]{4}$/) && root.child('rooms').child(newData.val()).child('meta/expiresAt').val() > now"
+          },
+          "modo": {
+            ".validate": "newData.val() == root.child('rooms').child(newData.parent().child('sala').val()).child('meta/modo').val()"
+          },
+          "dificultad": {
+            ".validate": "newData.val() == root.child('rooms').child(newData.parent().child('sala').val()).child('meta/dificultad').val()"
+          },
+          "creadoEn": {
+            ".validate": "newData.isNumber() && newData.val() == now"
+          },
+          "caducaEn": {
+            ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 120000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    }
+  }
+}

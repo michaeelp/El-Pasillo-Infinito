@@ -1,4 +1,4 @@
-import { setPortrait } from './monsters.js?v=1.2.0';
+import { setPortrait } from './monsters.js?v=1.3.0';
 export class Book {
   constructor(monsters,audio){this.monsters=monsters;this.audio=audio;this.index=0;this.turnTimer=0;
     this.root=document.getElementById('book');this.marks=document.getElementById('bookmarks');

@@ -1,10 +1,74 @@
 [
-  {"id":1,"nombre":"El Superviviente","ruta":"assets/avatars/01-el-superviviente.webp","color":"#dfad6d"},
-  {"id":2,"nombre":"La Niña del Impermeable","ruta":"assets/avatars/02-la-nina-del-impermeable.webp","color":"#efca49"},
-  {"id":3,"nombre":"El Monje Ciego","ruta":"assets/avatars/03-el-monje-ciego.webp","color":"#b6b3a2"},
-  {"id":4,"nombre":"La Bibliotecaria Fantasma","ruta":"assets/avatars/04-la-bibliotecaria-fantasma.webp","color":"#a7dadd"},
-  {"id":5,"nombre":"El Gato Negro","ruta":"assets/avatars/05-el-gato-negro.webp","color":"#83d875"},
-  {"id":6,"nombre":"El Cuervo Cojo","ruta":"assets/avatars/06-el-cuervo-cojo.webp","color":"#e97870"},
-  {"id":7,"nombre":"El Muñeco de Trapo","ruta":"assets/avatars/07-el-muneco-de-trapo.webp","color":"#c8a288"},
-  {"id":8,"nombre":"La Enfermera Sin Prisa","ruta":"assets/avatars/08-la-enfermera-sin-prisa.webp","color":"#a4c3a1"}
+  {
+    "id": 1,
+    "nombre": "El Superviviente",
+    "ruta": "assets/avatars/01-el-superviviente.webp",
+    "color": "#dfad6d"
+  },
+  {
+    "id": 2,
+    "nombre": "La Niña del Impermeable",
+    "ruta": "assets/avatars/02-la-nina-del-impermeable.webp",
+    "color": "#efca49"
+  },
+  {
+    "id": 3,
+    "nombre": "El Monje Ciego",
+    "ruta": "assets/avatars/03-el-monje-ciego.webp",
+    "color": "#b6b3a2"
+  },
+  {
+    "id": 4,
+    "nombre": "La Bibliotecaria Fantasma",
+    "ruta": "assets/avatars/04-la-bibliotecaria-fantasma.webp",
+    "color": "#a7dadd"
+  },
+  {
+    "id": 5,
+    "nombre": "El Gato Negro",
+    "ruta": "assets/avatars/05-el-gato-negro.webp",
+    "color": "#83d875"
+  },
+  {
+    "id": 6,
+    "nombre": "El Cuervo Cojo",
+    "ruta": "assets/avatars/06-el-cuervo-cojo.webp",
+    "color": "#e97870"
+  },
+  {
+    "id": 7,
+    "nombre": "El Muñeco de Trapo",
+    "ruta": "assets/avatars/07-el-muneco-de-trapo.webp",
+    "color": "#c8a288"
+  },
+  {
+    "id": 8,
+    "nombre": "La Enfermera Sin Prisa",
+    "ruta": "assets/avatars/08-la-enfermera-sin-prisa.webp",
+    "color": "#a4c3a1"
+  },
+  {
+    "id": 9,
+    "nombre": "El Leñador",
+    "ruta": "assets/avatars/09-el-lenador.webp",
+    "color": "#8b3e50"
+  },
+  {
+    "id": 10,
+    "nombre": "El Emo",
+    "ruta": "assets/avatars/10-el-emo.webp",
+    "color": "#9f79ba"
+  },
+  {
+    "id": 11,
+    "nombre": "El Esqueleto Deprimido",
+    "ruta": "assets/avatars/11-el-esqueleto-deprimido.webp",
+    "color": "#a6b5c3"
+  },
+  {
+    "id": 12,
+    "nombre": "El Robot Demacrado",
+    "ruta": "assets/avatars/12-el-robot-demacrado.webp",
+    "color": "#58b8b0"
+  }
 ]

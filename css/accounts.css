@@ -1,0 +1,22 @@
+/* Las fuentes del sistema visual siguen siendo Pirata One, IM Fell English y Cutive Mono. */
+.access-card,.preparation-card{width:min(560px,100%);padding:28px;background:#090f0ff0;border:1px solid #6f8172;display:grid;gap:18px}
+.access-card h1,.preparation-card h1{margin:0}.auth-tabs,.access-actions,.record-filters{display:flex;gap:10px;flex-wrap:wrap}
+#auth-form,#complete-account-form,.account-form,#preparation-form{display:grid;gap:12px}.access-actions{justify-content:space-between}
+input[type=email],input[type=password],input[type=text]{min-width:0;width:100%;font:inherit;background:#0c1514;color:#fff;border:1px solid #708b7d;border-radius:2px;padding:10px}
+#profile-name{font-size:30px;margin:8px 0}.profile-content{max-width:1040px;padding-bottom:40px}
+.profile-progress{display:grid;gap:6px;max-width:480px}.profile-progress progress{width:100%;height:16px}
+.profile-layout{display:grid;grid-template-columns:minmax(250px,1fr) minmax(250px,1fr);gap:24px}.profile-layout section,#account-actions{background:#081011dd;padding:18px;border:1px solid #425a50}
+.profile-layout dl{display:grid;grid-template-columns:1fr auto;gap:8px}.profile-layout dd{margin:0;text-align:right}
+#avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}#avatar-grid button{padding:5px}#avatar-grid .avatar{width:62px;height:62px}
+#achievements{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.achievement{padding:10px;border:1px solid #58645d;color:#a3ada7}.achievement.unlocked{color:#efd99d;border-color:#aa965e}
+#bestiary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}#bestiary figure{margin:0;padding:8px;background:#0a0f0fec}#bestiary img{width:100%;aspect-ratio:1;object-fit:cover}#bestiary figcaption{font-size:16px}#bestiary .unseen img{filter:brightness(0);background:#22312c}
+#account-actions{display:grid;gap:16px;margin-top:20px}.danger{border-color:#df7777;color:#ffc4c4}.friend-row{display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid #496456;flex-wrap:wrap}.friend-row>span{flex:1}
+.friends-content{width:min(960px,100%);margin:auto;padding:24px}.friends-actions{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.friends-actions input{flex:1}.room-options{display:flex;gap:16px;flex-wrap:wrap}.room-options label{display:grid;gap:6px}
+#invitation-notice{position:fixed;z-index:90;right:20px;bottom:20px;width:min(440px,calc(100vw - 40px));padding:20px;background:#0b1a14;border:2px solid #a7c88b;box-shadow:0 8px 40px #000}#invitation-notice p{margin:0 0 12px}
+.level-up-card{text-align:center}.level-up-card strong{display:block;font-size:64px;color:#e5d593}.level-up-card h1{font-size:38px}
+.score-list .own{background:#25413188;border-color:#a3c387}.score-list .level-badge{white-space:nowrap;font-size:16px}.score-list li{grid-template-columns:45px minmax(120px,1fr) auto auto}.record-filters select{flex:1}.records-tabs{display:flex;gap:6px;margin-bottom:14px}.records-tabs button{flex:1}.score-team{grid-column:2/-1;display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:650px){.profile-layout{grid-template-columns:1fr}.access-card,.preparation-card{padding:18px}#bestiary{grid-template-columns:repeat(3,1fr)}#achievements{grid-template-columns:repeat(2,1fr)}.score-list li{grid-template-columns:32px minmax(0,1fr) auto}.score-list .level-badge{grid-column:2}.friends-content{padding:16px}.friend-row>button{padding:8px}.record-filters{gap:8px}.profile-content{padding:16px}}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+#modal .score-list li{display:grid;grid-template-columns:45px minmax(120px,1fr) auto auto}#modal .score-list strong{margin-left:0}
+@media(max-width:650px){#modal .score-list li{grid-template-columns:32px minmax(0,1fr) auto}#modal .score-list .level-badge{grid-column:2}#modal .score-list strong{grid-column:3;grid-row:1/3}}

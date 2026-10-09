@@ -1,17 +1,19 @@
-import { GAME, ONLINE, roundDurations } from './config.js?v=1.2.0';
-import { roundPhase, monsterSequence } from './race.js?v=1.2.0';
-import { chooseSecret, rotateRoles, roleUid } from './coop.js?v=1.2.0';
-import { roleView } from './roles.js?v=1.2.0';
-import { precisionFor, raceBoard, standings } from './scoring.js?v=1.2.0';
-import { playerNode } from './profile.js?v=1.2.0';
-import { createChat, messages } from './lobby.js?v=1.2.0';
-import { setPortrait } from './monsters.js?v=1.2.0';
-import { publishScore } from './firebase.js?v=1.2.0';
-import { background } from './background.js?v=1.2.0';
-import { shortError } from './net.js?v=1.2.0';
-import { $, toast } from './ui.js?v=1.2.0';
-import { judge, topResult } from './ai.js?v=1.2.0';
-import { showDebug } from './debug.js?v=1.2.0';
+import { GAME, ONLINE, roundDurations } from './config.js?v=1.3.0';
+import { roundPhase, monsterSequence } from './race.js?v=1.3.0';
+import { rotateRoles, roleUid } from './coop.js?v=1.3.0';
+import { roleView } from './roles.js?v=1.3.0';
+import { precisionFor, raceBoard, standings } from './scoring.js?v=1.3.0';
+import { playerNode } from './profile.js?v=1.3.0';
+import { createChat, messages } from './lobby.js?v=1.3.0';
+import { setPortrait } from './monsters.js?v=1.3.0';
+import { publishRecord } from './records.js?v=1.3.0';
+import { awardMatch } from './xp.js?v=1.3.0';
+import { difficulty,winningResult } from './difficulty.js?v=1.3.0';
+import { background } from './background.js?v=1.3.0';
+import { shortError } from './net.js?v=1.3.0';
+import { $, toast } from './ui.js?v=1.3.0';
+import { judge, topResult } from './ai.js?v=1.3.0';
+import { showDebug } from './debug.js?v=1.3.0';
 const validImage = value => typeof value==='string' && value.length<=ONLINE.maxThumbnail && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(value);
 export class OnlineSession {
   constructor(deps) {
@@ -32,7 +34,8 @@ export class OnlineSession {
   async leave() {this.stop();await this.net.leave();this.onMenu();}
   sync(data) {
     this.data=data;
-    if(!data.meta||!data.jugadores[data.uid])return;
+    if(!data.meta){if(this.active){this.leave();toast('La sala ya no existe.');}return;}
+    if(!data.jugadores[data.uid])return;
     if(data.meta.estado==='lobby'){if(this.active)this.stop();return;}
     if(!this.active){this.active=true;document.body.classList.add('online');this.interval=setInterval(()=>this.tick(),ONLINE.pollMs);this.savedMatch=0;}
     if(data.meta.expiresAt<this.net.now()){this.leave();toast('La sala expiró.');return;}
@@ -58,7 +61,7 @@ export class OnlineSession {
       this.secretStop=this.net.watchSecret(key,secret=>{if(secret&&this.key===key){this.monster=this.getMonsters().find(m=>m.id===secret.monstruoId);this.tick();}});
       this.net.read(`secreto/${key}/${this.net.uid}`).then(secret=>{
         if(this.key!==key)return;if(secret){this.monster=this.getMonsters().find(m=>m.id===secret.monstruoId);return;}
-        const monster=chooseSecret(this.getMonsters(),this.data.meta.lastMonster);return this.net.secret(key,monster.id);
+        const monster=monsterSequence(this.data.meta.semilla,this.getMonsters(),this.data.meta.ronda).at(-1);return this.net.secret(key,monster.id);
       }).catch(()=>toast('No se pudo cargar el monstruo.'));
     }
     this.getBook()?.go(Math.floor(Math.random()*this.getMonsters().length),false);
@@ -80,7 +83,7 @@ export class OnlineSession {
     this.audio.tick(performance.now(),this.local?.state||phase.state,phase.remaining,meta.ronda,phase.phaseMs);
     if(meta.modo==='coop')this.coopVerdict();
     if(this.pendingRecord&&!this.sending)this.sendResult();
-    const ghost=(meta.board?.[this.net.uid]?.lives??ONLINE.lives)<=0;
+    const ghost=(meta.board?.[this.net.uid]?.lives??difficulty(meta.dificultad).vidas)<=0;
     this.ghost=ghost;$('ghost-tools').hidden=!ghost;
     for(const button of document.querySelectorAll('[data-whisper]'))button.disabled=now-(this.net.lastWhisper||0)<ONLINE.whisperMs;
     const teamSubmit=meta.modo==='coop'&&this.data.entregas[this.key]?.[roleUid(meta,'dibujante')];
@@ -92,7 +95,7 @@ export class OnlineSession {
       this.view(this.local.ok?'win':'lose','encounter');$('encounter-message').textContent=this.recognized(this.local.record);
     } else if(phase.state==='count'||phase.state==='flash') {
       if(meta.modo==='race'||this.role==='vigia') {
-        this.view(phase.state,'encounter',!!this.monster);const count=Math.max(1,Math.min(3,3-Math.floor(Math.max(0,phase.elapsed)/1000)));
+        this.view(phase.state,'encounter',!!this.monster);const count=Math.max(1,Math.ceil((phase.countMs-Math.max(0,phase.elapsed))/1000));
         $('count-number').textContent=count;if(count!==this.lastCount){this.lastCount=count;this.audio.effect('count');}
       } else {this.view(phase.state,'workbench');roleView(this.role,this.selectTab,this.drawing,phase.state);}
     } else {
@@ -132,7 +135,7 @@ export class OnlineSession {
       const results=local.blob?await this.recognizer.classify(local.blob,this.getLabels()):[];
       if(key!==this.key||!this.active)return;
       let miniatura='';if(local.blob){const image=await createImageBitmap(local.blob);miniatura=await this.thumbnail(image);image.close();}
-      showDebug(results,this.getLabels());const top=topResult(results);this.pendingRecord={etiqueta:top?.label||'',confianza:top?.score||0,precision:this.monster?precisionFor(results,this.monster):0,ms:local.ms,miniatura,distribution:Object.fromEntries(results.map(r=>[r.label,r.score])),timeout:false};
+      showDebug(results,this.getLabels());const top=topResult(results);this.pendingRecord={etiqueta:top?.label||'',confianza:top?.score||0,precision:this.monster?precisionFor(results,this.monster,this.data.meta.dificultad):0,ms:local.ms,miniatura,distribution:Object.fromEntries(results.map(r=>[r.label,r.score])),timeout:false};
     } catch(error) {if(key===this.key&&this.active)local.error='No se pudo analizar. Reintenta.';}
     finally {local.analyzing=false;}
   }
@@ -143,7 +146,7 @@ export class OnlineSession {
       if(!this.data.resultados[key]?.[this.net.uid])await this.net.result(key,record);
       if(this.key!==key||!this.active)return;
       this.pendingRecord=null;
-      if(this.data.meta.modo==='race'){const results=Object.entries(record.distribution||{}).map(([label,score])=>({label,score})),ok=!record.timeout&&judge(results,this.monster);this.local={state:'outcome',ok,start:this.net.now(),record};}
+      if(this.data.meta.modo==='race'){const results=Object.entries(record.distribution||{}).map(([label,score])=>({label,score})),ok=!record.timeout&&!!winningResult(results,this.monster,this.data.meta.dificultad);this.local={state:'outcome',ok,start:this.net.now(),record};}
       else this.local.state='done';
       this.viewKey='';
     } catch {if(this.key===key)this.local.error='No se pudo enviar. Reintentando…';}
@@ -166,12 +169,12 @@ export class OnlineSession {
     if(!record||this.data.veredictos[this.key]?.[this.net.uid])return;
     this.verdictPending=true;const key=this.key;
     const results=Object.entries(record.distribution||{}).map(([label,score])=>({label,score}));
-    try{await this.net.verdict(key,{monstruoId:this.monster.id,ok:!record.timeout&&record.etiqueta===topResult(results)?.label&&judge(results,this.monster),precision:precisionFor(results,this.monster)});}catch{this.verdictPending=false;}
+    try{await this.net.verdict(key,{monstruoId:this.monster.id,ok:!record.timeout&&record.etiqueta===topResult(results)?.label&&!!winningResult(results,this.monster,this.data.meta.dificultad),precision:precisionFor(results,this.monster,this.data.meta.dificultad)});}catch{this.verdictPending=false;}
   }
   resolvedResults() {
     const results={};
     for(const[uid,record]of Object.entries(this.data.resultados[this.key]||{})){
-      const distribution=Object.entries(record.distribution||{}).map(([label,score])=>({label,score})),monster=this.monster,precision=precisionFor(distribution,monster);let ok=!record.timeout&&record.etiqueta===topResult(distribution)?.label&&judge(distribution,monster);
+      const distribution=Object.entries(record.distribution||{}).map(([label,score])=>({label,score})),monster=this.monster,precision=precisionFor(distribution,monster,this.data.meta.dificultad);let ok=!record.timeout&&record.etiqueta===topResult(distribution)?.label&&!!winningResult(distribution,monster,this.data.meta.dificultad);
       if(ONLINE.verifyDrawings){const audits=Object.values(this.data.audits[this.key]||{}).map(v=>v[uid]).filter(Boolean);const disputes=audits.filter(a=>Math.abs(a.precision-record.precision)>ONLINE.discrepancyMargin||a.ok!==ok).length;if(disputes>=(Object.keys(this.data.jugadores).length/2))ok=false;}
       const ms=this.data.entregas[this.key]?.[uid]?.ms??this.phase.phaseMs;
       results[uid]={...record,ok,ms,precision};
@@ -196,12 +199,12 @@ export class OnlineSession {
       if(meta.estado==='round') {
         const phase=roundPhase(meta,now);const results=this.data.resultados[this.key]||{};
         if(meta.modo==='race') {
-          const alive=Object.keys(players).filter(uid=>!players[uid].ausente&&(meta.board?.[uid]?.lives??ONLINE.lives)>0);
+          const alive=Object.keys(players).filter(uid=>!players[uid].ausente&&(meta.board?.[uid]?.lives??difficulty(meta.dificultad).vidas)>0);
           const all=alive.every(uid=>results[uid]);
           if(!all&&now<phase.end+ONLINE.verificationMs)return;
           if(all&&now<Math.max(...Object.values(results).map(result=>result.t),phase.searchStart)+GAME.winMs)return;
           if(ONLINE.verifyDrawings&&all&&now<Math.max(...Object.values(results).map(r=>r.t),phase.searchStart)+ONLINE.verificationMs)return;
-          const board=raceBoard(players,meta.board||{},this.resolvedResults(),meta.ronda);
+          const board=raceBoard(players,meta.board||{},this.resolvedResults(),meta.ronda,meta.dificultad);
           await this.net.meta({estado:'reveal',board,inicioFase:now+ONLINE.leadMs});
         } else {
           const verdict=this.data.veredictos[this.key]?.[roleUid(meta,'vigia')];
@@ -219,7 +222,7 @@ export class OnlineSession {
     const key=JSON.stringify([board,this.data.jugadores]);if(root.dataset.boardKey===key)return;root.dataset.boardKey=key;
     const list=document.createElement('ul');list.className='scoreboard';
     for(const[uid,player]of Object.entries(this.data.jugadores)){
-      const score=board[uid]||{points:0,lives:ONLINE.lives};const row=document.createElement('li');row.className=score.lives<=0?'ghost':score.gained===0?'failed':'';
+      const score=board[uid]||{points:0,lives:difficulty(this.data.meta.dificultad).vidas};const row=document.createElement('li');row.className=score.lives<=0?'ghost':score.gained===0?'failed':'';
       const text=document.createElement('span');text.textContent=`${score.points} · ${score.lives} vidas`;row.append(playerNode(player),text);list.append(row);
     }root.replaceChildren(list);
   }
@@ -259,17 +262,31 @@ export class OnlineSession {
     for(const[uid,score]of ranking){const row=document.createElement('div'),total=document.createElement('strong');row.append(playerNode(this.data.jugadores[uid],false));total.textContent=score.points+(meta.modo==='coop'?' pasillos':' puntos');row.append(total);$('podium-list').append(row);}
     const drawings=Object.entries(this.data.resultados).filter(([key])=>key.startsWith(`${meta.match}_`)).flatMap(([key,results])=>Object.entries(results).map(([uid,record])=>({uid,record,key}))).filter(item=>validImage(item.record.miniatura)).sort((a,b)=>b.record.precision-a.record.precision);
     const chosen=drawings.length>6?[...drawings.slice(0,3),...drawings.slice(-3)]:drawings;for(const item of chosen)$('gallery').append(this.resultCard(item.uid,item.record));
-    if(this.savedMatch!==meta.match&&meta.host===this.net.uid){this.savedMatch=meta.match;$('online-save-retry').hidden=true;this.saveScores(ranking);}
+    if(this.savedMatch!==meta.match){this.savedMatch=meta.match;$('online-save-retry').hidden=true;this.saveScores(ranking);}
   }
   async saveScores(ranking) {
-    if(this.savingScore||!this.active||this.data.meta.host!==this.net.uid)return;
-    this.savingScore=true;const meta=this.data.meta,match=meta.match,id=`${this.net.code}-${meta.createdAt}-${match}`;$('online-save-retry').hidden=true;
-    $('online-save-status').textContent='Enviando récord…';let result={status:'local',message:'Sin récord global.'};
-    if(this.data.meta.modo==='race'){
-      const [uid,score]=ranking[0]||[];if(uid){const player=this.data.jugadores[uid];result=await publishScore(player.nombre,score.points,player.avatar,'race',[],id);}
-    }else{const players=Object.entries(this.data.jugadores).sort(([a],[b])=>a.localeCompare(b)).map(([,p])=>p);result=await publishScore(players[0]?.nombre||'Equipo',meta.pasillos,players[0]?.avatar||1,'coop',players,id);}
+    if(this.savingScore||!this.active)return;
+    this.savingScore=true;const meta=this.data.meta,match=meta.match,id=`${this.net.code}-${meta.createdAt}-${match}`;
+    $('online-save-retry').hidden=true;$('online-save-status').textContent='Guardando…';
+    const uid=this.net.uid,entries=Object.entries(this.data.resultados).filter(([key])=>key.startsWith(`${match}_`)),encuentros=[],precisiones=[];
+    let pasillos=meta.modo==='coop'?meta.pasillos:0,racha=0,maxRacha=0,margen3=false;
+    for(const [key,records]of entries.sort(([a],[b])=>Number(a.split('_').at(-1))-Number(b.split('_').at(-1)))) {
+      const n=Number(key.split('_').at(-1)),monster=monsterSequence(meta.semilla,this.getMonsters(),n).at(-1);
+      if(meta.modo==='race') {
+        const record=records[uid];if(!record)continue;const result=Object.entries(record.distribution||{}).map(([label,score])=>({label,score}));
+        const win=!record.timeout&&winningResult(result,monster,meta.dificultad);encuentros.push({id:monster.id,ok:!!win});precisiones.push(win?win.score:0);
+        if(win){pasillos++;racha++;if(roundDurations(n,meta.dificultad).phaseMs-record.ms<=3000)margen3=true;}else racha=0;maxRacha=Math.max(maxRacha,racha);
+      }else {const verdict=Object.values(this.data.veredictos[key]||{})[0];if(verdict){encuentros.push({id:verdict.monstruoId,ok:verdict.ok});precisiones.push(verdict.ok?verdict.precision:0);}}
+    }
+    const position=ranking.findIndex(([id])=>id===uid)+1,points=meta.board?.[uid]?.points||0;
+    let result;
+    try {
+      const awarded=await awardMatch({id,modo:meta.modo,dificultad:meta.dificultad,personalizada:meta.personalizada,pasillos,puntos:points,puesto:position,precisiones,encuentros,racha:meta.modo==='coop'?pasillos:maxRacha,margen3,tiempoMs:Math.max(0,Date.now()-match)});
+      if(awarded.nivel>awarded.nivelAnterior)this.onLevelUp?.(awarded.nivel);
+      result=await publishRecord({modo:meta.modo,dificultad:meta.dificultad,puntuacion:meta.modo==='race'?points:pasillos,personalizada:meta.personalizada,sala:this.net.code,partida:match});
+    }catch{result={status:'pending',message:'No se pudo guardar. Reintenta.'};}
     this.savingScore=false;if(!this.active||this.data.meta.match!==match||this.data.meta.estado!=='podium')return;
-    $('online-save-status').textContent=result.message;$('online-save-retry').hidden=result.status!=='pending'||this.data.meta.host!==this.net.uid;
+    $('online-save-status').textContent=result.message;$('online-save-retry').hidden=result.status!=='pending';
   }
   async rematch() {
     if(this.data.meta.host!==this.net.uid)return;
@@ -287,7 +304,7 @@ export class OnlineSession {
     const [uid,record]=pending,key=this.key;this.verified.add(uid);this.verifying=true;
     try {
       const blob=await(await fetch(record.miniatura)).blob(),results=await this.recognizer.classify(blob,this.getLabels());
-      if(key!==this.key)return;showDebug(results,this.getLabels());const precision=precisionFor(results,this.monster),ok=judge(results,this.monster);
+      if(key!==this.key)return;showDebug(results,this.getLabels());const precision=precisionFor(results,this.monster,this.data.meta.dificultad),ok=!!winningResult(results,this.monster,this.data.meta.dificultad);
       await this.net.set(`audits/${key}/${this.net.uid}/${uid}`,{precision,ok,t:this.net.now()});
     }catch{}finally{this.verifying=false;}
   }

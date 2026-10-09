@@ -1,15 +1,15 @@
 {
   "name": "el-pasillo-infinito",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "type": "module",
   "description": "Juego de terror y dibujo, solo y online",
   "scripts": {
-    "test": "node tests/scoring.test.js && node tests/catalog.test.js && node tools/validate_lore.mjs && node tools/update_rules.mjs --check",
-    "test:rules": "firebase emulators:exec --only database,auth,firestore --project demo-pasillo \"node tests/rules.test.cjs\"",
-    "test:expansion": "node tests/expansion-ui.cjs",
+    "test": "node tests/scoring.test.js && node tests/catalog.test.js && node tests/expansion4.test.js && node tools/validate_lore.mjs && node tools/update_rules.mjs --check && node tools/account_rules.mjs --check",
+    "test:rules": "firebase emulators:exec --only database,auth,firestore --project demo-pasillo \"node tests/account-rules.cjs\"",
+    "test:expansion": "firebase emulators:exec --only database,auth,firestore --project demo-pasillo \"node tests/accounts-ui.cjs\"",
     "generate:audio": "python3 tools/generate_audio.py",
-    "generate:rules": "node tools/update_rules.mjs",
+    "generate:rules": "node tools/update_rules.mjs && node tools/account_rules.mjs",
     "generate:docs": "node tools/export_docs.mjs"
   },
   "devDependencies": {

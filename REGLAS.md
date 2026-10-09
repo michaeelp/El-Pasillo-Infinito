@@ -1,47 +1,45 @@
-# Reglas de Seguridad
+# Reglas y datos 1.3.0
 
-Los archivos completos para publicar son database.rules.json y firestore.rules. Reemplaza las reglas anteriores, no pegues fragmentos debajo de un permiso global abierto.
-
-## Realtime Database
-
-| Rama | Lectura | Escritura |
-|---|---|---|
-| meta | Usuario autenticado, incluido un código aún vacío para crear mediante transacción | Anfitrión; creación por su futuro anfitrión |
-| meta/host | Igual que meta | Miembro que sustituye a un anfitrión ausente |
-| jugadores/{uid} | Autenticados con código de sala | Solo ese uid |
-| claims | Autenticados con código de sala | Reserva vacía o reserva propia, solo en lobby |
-| secreto/{partida_ronda}/{uid} | Solo ese uid cuando es Vigía | Solo ese Vigía, una vez y en la ronda vigente |
-| entregas, resultados | Miembros de la sala | Resultado propio; en Cooperativo solo el Dibujante |
-| veredictos | Miembros | Solo el Vigía y con el monstruo de su secreto |
-| live | Miembros | Dibujante actual, máximo un envío cada 300 ms |
-| chat/{uid} | Miembros | Propietario; 60 caracteres y un segundo entre mensajes |
-| whispers/{uid} | Miembros | Fantasma; 20 segundos entre susurros |
-| audits/{ronda}/{uid}/{otro} | Miembros | Verificador; nunca para su propio resultado |
-
-El nodo raíz de la sala no permite lecturas. Firebase propaga los permisos de lectura desde un padre: conceder lectura al padre revelaría también secreto. Por eso el cliente escucha ramas separadas.
-
-Los asientos se reservan en claims/slots/1..8, o 1..3 para Cooperativo. La propiedad slot del jugador debe corresponder a una reserva suya. Los avatares 1..8 también tienen reserva propia si uniqueAvatars está activo. Transacciones evitan que dos solicitudes simultáneas consigan el mismo asiento, rol o avatar.
-
-Solo el anfitrión cambia ronda, estado y semilla. La transferencia de anfitrión concede escritura únicamente sobre host, no sobre el resto de meta. El cliente elige el primer uid conectado como sucesor.
-
-Cada resultado requiere entrega previa salvo timeout, valida etiquetas del vocabulario, puntuaciones 0..1, tiempo 0..60.000 y miniatura de imagen base64 de hasta 20.000 caracteres. Los nodos de resultado son de una sola escritura. Los valores calculados por clientes pueden manipularse; las reglas validan forma y propiedad, no ejecutan CLIP.
-
-La validación de la sala rechaza escrituras después de expiresAt. El borrado de una sala expirada puede autorizarse a un usuario autenticado; cleanup/ proporciona el trabajo programado para ejecutar los borrados sin depender de visitas.
+`firestore.rules` y `database.rules.json` son los archivos completos que despliega `firebase.json`. `database.rules.commented.jsonc` contiene el mismo JSON con comentarios de cada rama. Se generan con `npm run generate:rules`; `npm test` detecta límites o configuraciones desactualizados. No pegar un fragmento encima de reglas anteriores: sustituir el archivo completo.
 
 ## Firestore
 
-Lectura pública en las tres colecciones. Crear solo con las claves previstas y valores válidos. Actualizar o borrar: denegado.
+- `account()` requiere Authentication no anónima. Perfil y búsqueda de nombres/códigos requieren cuenta; los registros admiten lectura pública, aunque la interfaz de invitado muestra solo su lista local.
+- `usernames` y `friendcodes` permiten crear solo con el perfil correspondiente en el mismo commit (`getAfter`); no permiten editar ni borrar. `users` exige ambas reservas, forma exacta, avatar 1–12, nivel 1, XP 0 y fecha de servidor al crear.
+- Nombre, minúsculas, código y fecha permanecen fijos. Avatar/preferencias se editan por el dueño. La curva de nivel se comprueba con umbrales generados desde la configuración.
+- XP y nivel no disminuyen. Cada aumento de XP/estadísticas debe incluir un recibo nuevo de partida con la diferencia exacta de XP (0–600), un incremento de una partida y fecha de servidor. Los recibos no se actualizan ni se borran. Se deduplican reintentos.
+- `users/{uid}/amigos`: solo lectura propia. Las callables, con Admin, comprueban acciones, amistad mutua, recepción de solicitudes, límites 100/50 y ventana móvil de diez solicitudes/hora; una transacción escribe ambos extremos. Los documentos de tasa y mutex son privados.
+- Los ocho registros individuales por modo/dificultad tienen siete campos exactos. Documento y campo UID pertenecen al usuario autenticado. Nombre/avatar/nivel coinciden con su perfil al guardar; fecha de servidor, puntuación entera 1–10000 Solo o 1–50000 Carrera. No puede bajar si `REEMPLAZAR_SOLO_SI_MEJOR` está activo.
+- Los cuatro registros cooperativos son Admin exclusivos. `publishCoopRecord` deriva los tres UID de una sala terminada, comprueba al solicitante y la dificultad, elige el menor UID como dueño y calcula SHA-256 sobre UIDs ordenados unidos por `|`. Añade `miembros` para filtrado y borrado. Guarda solo una vez por equipo/categoría y conserva el mayor con la configuración por defecto.
+- No se permite borrar desde el cliente. `deleteAccount` reautentica, marca la operación y elimina Auth, documentos, reservas, registros y ambos extremos sociales; `maintenance` reintenta operaciones pendientes.
+- Resto: denegado. Ningún documento público lleva correo ni contraseña.
 
-scores y scores_carrera: n, p, a, t. scores_coop añade equipo con exactamente tres pares n/a. Nombre: 1..14 caracteres, sin corchetes HTML; avatar entero 1..8; puntuación entera 1..500, o hasta 50.000 en Carrera; t igual al tiempo de servidor.
+Los recibos y el límite restringen las escrituras; no prueban la autenticidad de los resultados. Ver `functions/VALIDACION-AVANZADA.md` para una ampliación autoritativa.
 
-App Check es recomendable para reducir abuso. Ni App Check ni estas validaciones convierten una puntuación del navegador en una prueba de juego legítimo.
+## Realtime Database
 
-## Pruebas
+Toda lectura/escritura cliente permitida requiere cuenta no anónima y `cuentas/{uid}/activo=true`, reflejado por Admin. Cada ruta tiene validación de campos y deniega campos extra.
 
-tests/rules.test.cjs carga estas reglas en emuladores y verifica accesos permitidos y rechazados. No usa ni modifica bases de producción. Ampliar las reglas exige repetir las pruebas y no reintroducir permisos en padres.
+| Rama | Regla |
+|---|---|
+| `cuentas` | Lectura/escritura cliente denegada; las reglas consultan la identidad Admin |
+| `amigos/{uid}` | Lectura propia; Admin refleja `true` únicamente si ambos documentos FS confirman amistad |
+| `presencia/{uid}` | Escritura propia, estados válidos, sala existente si está en sala, tiempo de servidor; lectura propia o de amigos |
+| `invitaciones/{destino}/{id}` | Crear solo el emisor miembro de la sala en lobby, con amistad mutua; nombre/UID/modo/dificultad reales y caducidad ≤2 minutos; destinatario lee y elimina |
+| `rooms/{codigo}/meta` | Crear por anfitrión; actualizar por anfitrión; migrar si el anterior está ausente; dificultad/semilla/práctica fijas durante la partida |
+| `jugadores/{uid}` | Escritura propia; nombre igual a identidad reflejada, avatar entero 1–12, slot/rol reclamado y sala no caducada |
+| `claims` | Transacciones propias para slots, avatares 1–12 y los tres roles; evita carreras al ocupar un mismo elemento |
+| `secreto` | Solo Vigía lee/escribe el monstruo de su ronda cooperativa; ID 1–30 |
+| `entregas`,`resultados` | Entrega única por UID/ronda; dueño en carrera o Dibujante en Coop; milisegundos 0–75000, imagen y probabilidades acotadas |
+| `veredictos` | Solo Vigía; monstruo coincide con su documento secreto |
+| `live` | Solo Dibujante, miniatura y ritmo mínimo de 300 ms |
+| `chat`,`whispers` | Identidad propia, texto acotado y ritmo mínimo; susurros solo con cero vidas |
+| `audits` | Propios, sobre otro jugador y una única vez |
 
-## Catálogo 1.2.0
+Las reglas de RTDB no pueden leer Firestore. Por eso los clientes **no pueden escribir el espejo de amigos**. Los triggers de Functions con reintentos reparan interrupciones. `onDisconnect` marca presencia y jugador ausentes; listeners y claims se limpian al salir. La tarea de mantenimiento elimina salas e invitaciones caducadas.
 
-Secreto y lastMonster admiten IDs hasta 30. Las etiquetas y las claves de distribution se generan automáticamente con node tools/update_rules.mjs desde monsters.json; no se mantiene una lista manual. node tools/update_rules.mjs --check detecta un catálogo cambiado sin regenerar reglas. Las nuevas reglas prueban el monstruo 30, rechazan el 31 y rechazan etiquetas ajenas al catálogo.
+El último monstruo admite 0–30, las probabilidades solo las 56 etiquetas generadas de `monsters.json`, las vidas 0–5 y el avatar 1–12. Una semilla común permite reconstruir la bolsa desde código; las restricciones del Vigía son de interfaz y acceso a su documento, no una promesa de ocultación criptográfica de la semilla.
 
-El cliente usa IDs estables para publicar récords y confirma el documento existente antes de reintentar. La inmutabilidad se conserva. La lectura permite registros históricos sin avatar; las nuevas escrituras exigen a y los campos actuales.
+## Índices
+
+`firestore.indexes.json` contiene los doce índices compuestos. Cooperativo: `miembros ARRAY_CONTAINS` + `puntuacion DESCENDING`, para las cuatro dificultades. Individuales: `puntuacion DESCENDING` + ID ascendente. El orden sencillo, los filtros por ID y el conteo usan además los índices automáticos de campo. Esperar a estado Enabled antes de probar. No excluir `puntuacion` de los índices.

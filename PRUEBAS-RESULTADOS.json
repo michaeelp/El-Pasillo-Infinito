@@ -1,0 +1,16 @@
+{
+  "version": "1.3.0",
+  "report": [
+    "Invitado: solo/local; 3 partidas completas con fondo persistente; sin perfil, XP ni récord global.",
+    "Lienzo: seis pinceles, siete formas, goma/cubo/cuentagotas/simetría, capa al 50 %, 35 pasos, recorte de spray y exportación PNG en color blanco opaco.",
+    "Fondo: F5, redimensionado, evento de visibilidad y degradado cuando fallan las imágenes.",
+    "Cuenta persistente, avatar 12, bestiario/logros, XP, récord único/mejor, dificultad y puesto 56 por conteo.",
+    "Amistad por etiqueta, espejo mutuo, filtro Amigos, invitación instantánea y carrera en Pesadilla con una vida.",
+    "Link personal conservado antes del acceso y solicitud completada tras crear la cuenta.",
+    "Cooperativo: tres roles, acierto, rotación, derrota, XP y un solo récord del equipo.",
+    "Inicio/cierre de sesión, cambio de contraseña y eliminación completa desde la interfaz."
+  ],
+  "pageErrors": [],
+  "guestRuns": 3,
+  "CLIP": "doble de prueba; inferencia real pendiente de validación visual humana"
+}

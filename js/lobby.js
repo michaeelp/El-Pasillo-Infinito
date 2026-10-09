@@ -1,8 +1,10 @@
-import { ONLINE } from './config.js?v=1.2.0';
-import { Network, networkError, shortError } from './net.js?v=1.2.0';
-import { getProfile, playerNode } from './profile.js?v=1.2.0';
-import { assignRoles, ROLES } from './coop.js?v=1.2.0';
-import { screen, toast } from './ui.js?v=1.2.0';
+import { ONLINE } from './config.js?v=1.3.0';
+import { Network, networkError, shortError } from './net.js?v=1.3.0';
+import { getProfile, playerNode } from './profile.js?v=1.3.0';
+import { assignRoles, ROLES } from './coop.js?v=1.3.0';
+import { screen, toast } from './ui.js?v=1.3.0';
+import {difficulty,populateDifficulties} from './difficulty.js?v=1.3.0';
+import {renderFriends} from './friends.js?v=1.3.0';
 const $ = id => document.getElementById(id);
 export function messages(value) {return Object.values(value || {}).flatMap(branch=>Object.values(branch || {})).filter(item=>item&&typeof item==='object'&&typeof item.texto==='string').sort((a,b)=>a.t-b.t).slice(-30);}
 export function createChat(root, net, quick = false) {
@@ -22,11 +24,13 @@ export function createChat(root, net, quick = false) {
   };
 }
 export class Lobby {
-  constructor(recognizer, onRoom, onMenu) {
+  constructor(recognizer, onRoom, onMenu, onPrepare=()=>{},onProfile=()=>{}) {
     this.recognizer=recognizer;this.onRoom=onRoom;this.onMenu=onMenu;this.mode='race';
     this.net=new Network(data=>{this.render(data);this.onRoom(data);});
     this.chat=createChat($('lobby-chat'),this.net);
-    $('create-room').onclick=()=>this.action(()=>this.net.create(this.mode,getProfile()));
+    $('create-room').onclick=onPrepare;
+    this.openProfile=onProfile;populateDifficulties($('room-difficulty'));
+    $('room-difficulty').onchange=()=>this.action(()=>this.net.meta({dificultad:$('room-difficulty').value,vidas:difficulty($('room-difficulty').value).vidas,revision:(this.net.data.meta?.revision||0)+1}));
     $('join-form').onsubmit=event=>{event.preventDefault();this.action(()=>this.net.join($('room-input').value,getProfile()));};
     $('leave-room').onclick=async()=>{await this.net.leave();this.onMenu();};
     $('copy-code').onclick=()=>this.copy(this.net.code);$('copy-link').onclick=()=>{const url=new URL(location.href);url.search='';url.searchParams.set('sala',this.net.code);this.copy(url.href);};
@@ -45,8 +49,9 @@ export class Lobby {
   }
   async action(fn) {
     if(this.busy)return;this.busy=true;$('lobby-error').textContent='';$('create-room').disabled=true;
+    for(const id of ['ready-room','start-room','role-choice','room-mode','room-difficulty'])$(id).disabled=true;
     try{await fn();}catch(error){$('lobby-error').textContent=/sala|partida|Avatar|rol|jugadores|momento/i.test(error.message)?error.message:networkError(error);}
-    finally{this.busy=false;$('create-room').disabled=false;}
+    finally{this.busy=false;$('create-room').disabled=false;if(this.net.data.meta)this.render({...this.net.data,uid:this.net.uid,code:this.net.code,connected:this.net.connected});}
   }
   async copy(text) {try{await navigator.clipboard.writeText(text);toast('Copiado.');}catch{toast('No se pudo copiar.');}}
   canStart(data=this.net.data) {
@@ -56,12 +61,13 @@ export class Lobby {
   async start() {
     const data=this.net.data;if(!this.canStart()||data.meta.host!==this.net.uid)throw new Error('Faltan jugadores listos.');
     const roles=data.meta.modo==='coop'?assignRoles(data.jugadores):{};
-    await this.net.meta({estado:'round',ronda:1,pasillos:0,vidas:ONLINE.lives,inicioFase:this.net.now()+ONLINE.leadMs,semilla:data.meta.modo==='race'?crypto.getRandomValues(new Uint32Array(1))[0]:0,match:Date.now(),roles,board:{},lastMonster:0});
+    await this.net.meta({estado:'round',ronda:1,pasillos:0,vidas:difficulty(data.meta.dificultad).vidas,inicioFase:this.net.now()+ONLINE.leadMs,semilla:data.meta.personalizada?data.meta.semilla:crypto.getRandomValues(new Uint32Array(1))[0],match:Date.now(),roles,board:{},lastMonster:0});
   }
   async aiStatus(status) {
     this.status=status;if(!this.net.code||!this.net.data.jugadores[this.net.uid])return;
-    const now=performance.now();if(status.state==='loading'&&now-(this.progressAt||0)<800)return;this.progressAt=now;
-    try{await this.net.player({iaLista:status.state==='ready',progreso:status.state==='ready'?100:status.percent||0,...(status.state==='ready'?{}:{listo:false})});}catch{}
+    if(this.updatingStatus)return;this.updatingStatus=true;
+    const now=performance.now();if(status.state==='loading'&&now-(this.progressAt||0)<800){this.updatingStatus=false;return;}this.progressAt=now;
+    try{await this.net.player({iaLista:status.state==='ready',progreso:status.state==='ready'?100:status.percent||0,...(status.state==='ready'?{}:{listo:false})});}catch{}finally{this.updatingStatus=false;}
   }
   render(data) {
     if(!data.meta)return;
@@ -73,9 +79,13 @@ export class Lobby {
       this.migrating=true;this.net.transaction('meta/host',uid=>uid===data.meta.host?data.uid:undefined).catch(()=>{}).finally(()=>{this.migrating=false;});
     }
     $('room-entry').hidden=true;$('room-content').hidden=false;$('room-code').textContent=data.code;
-    const host=data.meta.host===data.uid;$('room-mode').value=data.meta.modo;$('room-mode').disabled=!host;
-    $('role-selector').hidden=data.meta.modo!=='coop';$('start-room').hidden=!host;$('start-room').disabled=!this.canStart(data);
-    const own=data.jugadores[data.uid];$('ready-room').disabled=!own?.iaLista||!data.connected;$('ready-room').textContent=own?.listo&&(own.readyRevision||0)===(data.meta.revision||0)?'CANCELAR LISTO':'LISTO';
+    const host=data.meta.host===data.uid;$('room-mode').value=data.meta.modo;$('room-mode').disabled=!host||this.busy;
+    $('room-difficulty').value=data.meta.dificultad;$('room-difficulty').disabled=!host||this.busy;
+    $('room-practice').hidden=!data.meta.personalizada;
+    renderFriends($('invite-friends'),this.openProfile,{code:data.code,meta:data.meta});
+    $('role-selector').hidden=data.meta.modo!=='coop';$('start-room').hidden=!host;$('start-room').disabled=this.busy||!this.canStart(data);
+    const own=data.jugadores[data.uid];$('ready-room').disabled=this.busy||!own?.iaLista||!data.connected;$('ready-room').textContent=own?.listo&&(own.readyRevision||0)===(data.meta.revision||0)?'CANCELAR LISTO':'LISTO';
+    $('role-choice').disabled=this.busy;
     $('role-choice').value=own?.rol||'';
     for(const option of $('role-choice').options)option.disabled=!!option.value&&Object.entries(data.jugadores).some(([uid,p])=>uid!==data.uid&&p.rol===option.value);
     $('players').replaceChildren();

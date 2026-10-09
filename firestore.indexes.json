@@ -1,0 +1,173 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "records_coop_facil",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "miembros",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_coop_normal",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "miembros",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_coop_dificil",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "miembros",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_coop_pesadilla",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "miembros",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_solo_facil",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_solo_normal",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_solo_dificil",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_solo_pesadilla",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_carrera_facil",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_carrera_normal",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_carrera_dificil",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "records_carrera_pesadilla",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "puntuacion",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

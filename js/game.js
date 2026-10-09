@@ -1,134 +1,109 @@
-import { GAME, TIEMPO_ALERTA, roundDurations } from './config.js?v=1.2.0';
-import { loadMonsters,chooseMonster,labelsFrom,setPortrait,preload } from './monsters.js?v=1.2.0';
-import { Drawing,COLORS } from './draw.js?v=1.2.0';
-import { Book } from './book.js?v=1.2.0';
-import { Atmosphere } from './audio.js?v=1.2.0';
-import { Recognizer,judge,topResult } from './ai.js?v=1.2.0';
-import { showDebug } from './debug.js?v=1.2.0';
-import { getOptions,saveOptions,addResult,nameResult,sanitizeName,canPersist } from './storage.js?v=1.2.0';
-import { publishScore } from './firebase.js?v=1.2.0';
-import { $,screen,setupUI,applyOptions,refreshBest,refreshWorld,toast } from './ui.js?v=1.2.0';
-import { background } from './background.js?v=1.2.0';
-import { loadFonts } from './fonts.js?v=1.2.0';
-import { loadProfile,getProfile,playerNode,setupProfile } from './profile.js?v=1.2.0';
-import { Lobby } from './lobby.js?v=1.2.0';
-import { OnlineSession } from './online-game.js?v=1.2.0';
-import { onlineConfigured,networkError } from './net.js?v=1.2.0';
-const audio=new Atmosphere(getOptions());
-let lobby=null,online=null,roundTimes=roundDurations(1),roundNumber=1;
-let state='warning',monsters=[],labels=[],book=null,current=null,score=0,startedAt=0,deadline=0,paused=false,pausedAt=0,lastCount=0,tab='book',resultId=null,saved=false,runToken=0,analysis=null,analysisError='',submittedBlob=null,lastReason='',assetsReady=false;
-const debug=new URLSearchParams(location.search).get('debug')==='1';
-const drawing=new Drawing($('drawing'),type=>audio.effect(type));
+import {GAME,TIEMPO_ALERTA,roundDurations} from './config.js?v=1.3.0';
+import {loadMonsters,labelsFrom,setPortrait,preload} from './monsters.js?v=1.3.0';
+import {Drawing} from './draw.js?v=1.3.0';
+import {setupTools} from './draw/tools.js?v=1.3.0';
+import {Book} from './book.js?v=1.3.0';
+import {Atmosphere} from './audio.js?v=1.3.0';
+import {Recognizer,topResult} from './ai.js?v=1.3.0';
+import {showDebug} from './debug.js?v=1.3.0';
+import {getOptions,saveOptions,addResult,canPersist} from './storage.js?v=1.3.0';
+import {publishRecord} from './records.js?v=1.3.0';
+import {$,screen,setupUI,applyOptions,refreshBest,refreshWorld,toast} from './ui.js?v=1.3.0';
+import {background} from './background.js?v=1.3.0';
+import {loadFonts} from './fonts.js?v=1.3.0';
+import {loadProfile,refreshProfile,getProfile,playerNode,setupProfile} from './profile.js?v=1.3.0';
+import {initAuth,currentUser,onSession,onBeforeSignOut,signIn,createAccount,completeAccount,playAsGuest,signOut,resetPassword,authError} from './auth.js?v=1.3.0';
+import {startFriends,stopFriends,rememberFriendLink,completeFriendLink,renderFriends,sendRequest,requestsEnabled,dismissInvitation,socialNow} from './friends.js?v=1.3.0';
+import {awardMatch} from './xp.js?v=1.3.0';
+import {difficulty,countdownMs,winningResult,populateDifficulties} from './difficulty.js?v=1.3.0';
+import {MonsterPool,seedNumber} from './pool.js?v=1.3.0';
+import {Lobby} from './lobby.js?v=1.3.0';
+import {OnlineSession} from './online-game.js?v=1.3.0';
+import {networkError} from './net.js?v=1.3.0';
+const audio=new Atmosphere(getOptions()),debug=new URLSearchParams(location.search).get('debug')==='1';
+let lobby,online,roundTimes=roundDurations(1),roundNumber=1,countMs=3000,settings={dificultad:'normal',semilla:0,personalizada:false},pool,match;
+let state='warning',monsters=[],labels=[],book,current,score=0,startedAt=0,deadline=0,paused=false,pausedAt=0,lastCount=0,tab='book',runToken=0,analysis,analysisError='',submittedBlob,lastReason='',assetsReady=false,authBusy=false,accepted=false,authMode='login',prepMode='solo',submittedMs=0,soloSaving=false,invites=[],inviteTimer,levelTimer;
+const drawing=new Drawing($('drawing'),type=>audio.effect(type));setupTools(drawing);
 const recognizer=new Recognizer(status=>{
   if(status.state==='ready'){$('ai-status').textContent='IA lista.';$('ai-progress').value=100;$('retry-ai').hidden=true;}
   else if(status.state==='error'){$('ai-status').textContent='No se cargó la IA. Reintenta.';$('retry-ai').hidden=false;}
   else{$('ai-status').textContent=`Cargando IA: ${status.percent||0} %`;$('ai-progress').value=status.percent||0;$('retry-ai').hidden=true;}
-  $('play').disabled=!(recognizer.ready&&assetsReady);
-  lobby?.aiStatus(status);
+  $('play').disabled=!(recognizer.ready&&assetsReady);lobby?.aiStatus(status);
 });
-setupUI(audio);
+setupUI(audio);rememberFriendLink();document.addEventListener('pasillo-toast',e=>toast(e.detail));
 function enter(next,view){state=next;startedAt=performance.now();screen(view,next,roundNumber);drawing.enabled=next==='book'&&!paused&&tab==='draw';$('debug').hidden=!debug;}
 function hideAnalysisActions(){$('inference-retry').hidden=true;$('inference-menu').hidden=true;}
-function menu(){online?.stop();runToken++;paused=false;document.body.classList.remove('paused','online');if($('pause-modal').open)$('pause-modal').close();$('game-chat').hidden=true;$('ghost-tools').hidden=true;document.querySelector('.tabs').hidden=false;$('role-view').hidden=true;$('live-view').hidden=true;$('online-board').hidden=true;$('active-role').hidden=true;$('pause').hidden=false;$('online-leave').hidden=true;$('round-label').textContent='PASILLO';audio.resume();hideAnalysisActions();enter('menu','menu');$('menu-profile').replaceChildren(playerNode(getProfile()));refreshBest();refreshWorld();if(!recognizer.ready)recognizer.load().catch(()=>{});}
-function selectTab(next){if(online?.active&&online.data?.meta?.modo==='coop'&&(online.role==='vigia'||online.role==='bibliotecario'&&next!=='book'||online.role==='dibujante'&&next!=='draw'))return;tab=next;$('book-view').hidden=next!=='book';$('draw-view').hidden=next!=='draw';for(const key of ['book','draw']){$(`tab-${key}`).classList.toggle('active',key===next);$(`tab-${key}`).setAttribute('aria-pressed',String(key===next));}drawing.active=null;drawing.enabled=state==='book'&&!paused&&next==='draw';}
-async function boot(){
-  try{monsters=await loadMonsters();labels=labelsFrom(monsters);book=new Book(monsters,audio);showDebug([],labels);await loadProfile();$('menu-profile').replaceChildren(playerNode(getProfile()));setupProfile(menu,()=>{$('menu-profile').replaceChildren(playerNode(getProfile()));});await Promise.all([background.ready,loadFonts(),preload(monsters),audio.preload(monsters)]);assetsReady=true;$('play').disabled=!recognizer.ready;}
-  catch(error){$('ai-status').textContent=error.message;$('retry-ai').hidden=false;$('retry-ai').onclick=()=>location.reload();}
-}
-$('accept').onclick=async()=>{
-  if($('gentle-start').checked)saveOptions({flash:'reduced',screamer:'attenuated'});
-  applyOptions(audio);await audio.start();await bootReady;menu();
-  let code=new URL(location.href).searchParams.get('sala');try{code ||= sessionStorage.getItem('pasillo-room');}catch{}
-  if(code&&assetsReady){state='lobby';await lobby.open('race',code);}
-};
+function identity(){$('menu-profile').replaceChildren(playerNode(getProfile()||{nombre:'Invitado',avatar:1}));const guest=!currentUser();$('profile-open').hidden=guest;$('friends-open').hidden=guest;$('logout').hidden=guest;$('account-open').hidden=!guest;$('menu-profile').disabled=guest;}
+function menu(){clearTimeout(levelTimer);online?.stop();runToken++;paused=false;drawing.cancel();document.body.classList.remove('paused','online');if($('pause-modal').open)$('pause-modal').close();$('game-chat').hidden=true;$('ghost-tools').hidden=true;document.querySelector('.tabs').hidden=false;$('role-view').hidden=true;$('live-view').hidden=true;$('online-board').hidden=true;$('active-role').hidden=true;$('pause').hidden=false;$('online-leave').hidden=true;$('round-label').textContent='PASILLO';audio.resume();hideAnalysisActions();enter('menu','menu');identity();refreshBest();refreshWorld();if(!recognizer.ready)recognizer.load().catch(()=>{});}
+// La vista de rol se refresca a menudo: conservar el trazo si la pestaña sigue siendo la misma.
+function selectTab(next){if(online?.active&&online.data?.meta?.modo==='coop'&&(online.role==='vigia'||online.role==='bibliotecario'&&next!=='book'||online.role==='dibujante'&&next!=='draw'))return;if(next!==tab)drawing.cancel();tab=next;$('book-view').hidden=next!=='book';$('draw-view').hidden=next!=='draw';for(const key of ['book','draw']){$(`tab-${key}`).classList.toggle('active',key===next);$(`tab-${key}`).setAttribute('aria-pressed',String(key===next));}drawing.enabled=state==='book'&&!paused&&next==='draw';}
+async function boot(){try{monsters=await loadMonsters();labels=labelsFrom(monsters);book=new Book(monsters,audio);showDebug([],labels);await loadProfile();identity();await Promise.all([background.ready,loadFonts(),preload(monsters),audio.preload(monsters)]);assetsReady=true;$('play').disabled=!recognizer.ready;}catch(e){$('ai-status').textContent=e.message;$('retry-ai').hidden=false;$('retry-ai').onclick=()=>location.reload();}}
+// El acceso siempre sigue a la advertencia; una sesión persistente recupera automáticamente el perfil.
+$('accept').onclick=async()=>{if($('gentle-start').checked)saveOptions({flash:'reduced',screamer:'attenuated'});applyOptions(audio);await audio.start();await bootReady;accepted=true;if(!recognizer.ready)recognizer.load().catch(()=>{});try{await initAuth();if(currentUser()){await afterLogin();return;}}catch(e){$('auth-status').textContent=authError(e);}showAccess();};
+function showAccess(){enter('access','access');$('complete-account-form').hidden=true;$('auth-form').hidden=false;$('auth-reset').hidden=false;}
+function chooseAuth(mode){authMode=mode;$('auth-name-row').hidden=mode!=='register';$('auth-name').required=mode==='register';$('auth-password').minLength=mode==='register'?8:1;$('auth-password').autocomplete=mode==='register'?'new-password':'current-password';$('auth-submit').textContent=mode==='register'?'CREAR CUENTA':'INICIAR SESIÓN';$('auth-status').textContent='';}
+$('auth-login').onclick=()=>chooseAuth('login');$('auth-register').onclick=()=>chooseAuth('register');
+$('auth-form').onsubmit=async e=>{e.preventDefault();if(authBusy)return;authBusy=true;$('auth-submit').disabled=true;$('auth-status').textContent='Conectando…';try{if(authMode==='register')await createAccount($('auth-email').value,$('auth-password').value,$('auth-name').value);else await signIn($('auth-email').value,$('auth-password').value);$('auth-password').value='';await afterLogin();}catch(e){$('auth-status').textContent=authError(e);}finally{authBusy=false;$('auth-submit').disabled=false;}};
+$('complete-account-form').onsubmit=async e=>{e.preventDefault();if(authBusy)return;authBusy=true;try{await completeAccount($('complete-name').value);await afterLogin();}catch(e){$('auth-status').textContent=authError(e);}finally{authBusy=false;}};
+$('auth-reset').onclick=async()=>{try{await resetPassword($('auth-email').value);$('auth-status').textContent='Revisa tu correo.';}catch(e){$('auth-status').textContent=authError(e);}};
+$('auth-guest').onclick=async()=>{authBusy=true;try{await playAsGuest();await refreshProfile();await stopFriends();menu();}finally{authBusy=false;}};
+$('account-open').onclick=showAccess;
+async function afterLogin(){const p=await refreshProfile(identity);if(!p){showAccess();$('auth-form').hidden=true;$('complete-account-form').hidden=false;$('auth-reset').hidden=true;$('auth-status').textContent='Elige tu nombre de usuario.';return;}
+  await startFriends(()=>{if(state==='friends')renderFriends($('friends-list'),openOtherProfile);if(lobby.net.code&&lobby.net.data.meta?.estado==='lobby')lobby.render({...lobby.net.data,uid:lobby.net.uid,code:lobby.net.code,connected:lobby.net.connected});},receiveInvitation);
+  const message=await completeFriendLink();if(message)toast(message);menu();let code=new URL(location.href).searchParams.get('sala');try{code ||= sessionStorage.getItem('pasillo-room');}catch{}if(code&&assetsReady){state='lobby';await lobby.open('race',code);}}
+let previousUid='';onSession(user=>{const uid=user?.uid||'';if(previousUid&&uid!==previousUid&&accepted&&!authBusy){online.stop();lobby.net.leave();stopFriends();refreshProfile().then(identity);showAccess();}previousUid=uid;});
+$('logout').onclick=async()=>{await lobby.net.leave();await signOut();showAccess();};
 $('retry-ai').onclick=()=>recognizer.load().catch(()=>{});
-$('play').onclick=async()=>{if(!recognizer.ready||!assetsReady)return;enter('modes','modes');$('online-status').textContent='Conectando…';$('race-mode').disabled=true;$('coop-mode').disabled=true;try{if(!onlineConfigured())throw new Error('Firebase no configurado.');await lobby.net.connect();$('online-status').textContent='';$('race-mode').disabled=false;$('coop-mode').disabled=false;}catch(error){$('online-status').textContent=onlineConfigured()?networkError(error):'Online no configurado.';}};
-$('solo-mode').onclick=()=>{score=0;current=null;runToken++;nextRound();};
-$('modes-back').onclick=menu;
-function openProfile(){
-  const room=lobby.net.code&&lobby.net.data.meta?.estado==='lobby',net=lobby.net;
-  const back=room?()=>{state='lobby';screen('lobby','lobby');}:menu;
-  const blocked=room&&net.data.meta.uniqueAvatars?Object.entries(net.data.jugadores).filter(([uid])=>uid!==net.uid).map(([,p])=>p.avatar):[];
-  setupProfile(back,()=>{$('menu-profile').replaceChildren(playerNode(getProfile()));},blocked,room?async(name,avatar)=>{
-    const old=net.data.jugadores[net.uid];if(net.data.meta.uniqueAvatars&&avatar!==old.avatar)await net.claim('avatars',avatar);
-    try{await net.player({nombre:name,avatar,listo:false});}catch(error){if(avatar!==old.avatar)await net.release('avatars',avatar);throw error;}
-    if(avatar!==old.avatar)await net.release('avatars',old.avatar);
-  }:null);enter('profile','profile');
-}
-for(const id of ['profile-open','menu-profile'])$(id).onclick=openProfile;
-const lobbyProfile=document.createElement('button');lobbyProfile.textContent='PERFIL';lobbyProfile.onclick=openProfile;$('lobby-title').parentElement.append(lobbyProfile);
-$('race-mode').onclick=()=>{state='lobby';lobby.open('race');};$('coop-mode').onclick=()=>{state='lobby';lobby.open('coop');};
-function nextRound(){
-  current=chooseMonster(monsters,current);drawing.clear(false);lastCount=3;analysis=null;analysisError='';submittedBlob=null;
-  roundNumber=score+1;roundTimes=roundDurations(roundNumber);
-  $('encounter-caption').textContent=`PASILLO ${String(score+1).padStart(2,'0')}`;$('encounter-caption').hidden=false;
-  $('count-number').textContent='3';$('count-number').hidden=false;$('monster-face').hidden=true;$('encounter-message').textContent='';hideAnalysisActions();
-  setPortrait($('monster-face'),current);enter('count','encounter');audio.effect('count');
-}
+$('play').onclick=async()=>{if(!recognizer.ready||!assetsReady)return;enter('modes','modes');$('race-mode').disabled=$('coop-mode').disabled=true;$('online-status').textContent=currentUser()?'Conectando…':'Inicia sesión para jugar online.';if(currentUser())try{await lobby.net.connect();$('online-status').textContent='';$('race-mode').disabled=$('coop-mode').disabled=false;}catch(e){$('online-status').textContent=networkError(e);}};
+$('modes-back').onclick=menu;$('solo-mode').onclick=()=>prepare('solo');$('race-mode').onclick=()=>{state='lobby';lobby.open('race');};$('coop-mode').onclick=()=>{state='lobby';lobby.open('coop');};
+populateDifficulties($('prep-difficulty'));
+function prepare(mode){prepMode=mode;const o=getOptions();$('prep-flash').value=o.flash;$('prep-screamer').value=o.screamer;$('prep-difficulty').value=settings.dificultad;$('prep-status').textContent='';summary();enter('preparation','preparation');}
+function summary(){const d=difficulty($('prep-difficulty').value);$('prep-summary').textContent=`Tiempo: ${d.fase} s · Flash: ${d.flash.toFixed(2)} s`;}
+$('prep-difficulty').onchange=summary;$('prep-back').onclick=()=>{if(prepMode==='solo')enter('modes','modes');else{state='lobby';screen('lobby','lobby');}};
+$('preparation-form').onsubmit=async e=>{e.preventDefault();const value=$('prep-seed').value.trim();settings={dificultad:$('prep-difficulty').value,semilla:value?seedNumber(value):crypto.getRandomValues(new Uint32Array(1))[0],personalizada:!!value};saveOptions({flash:$('prep-flash').value,screamer:$('prep-screamer').value});applyOptions(audio);
+  if(prepMode==='solo')startSolo();else{if(!currentUser()){showAccess();return;}$('prep-start').disabled=true;try{await lobby.net.create(lobby.mode,getProfile(),settings);state='lobby';screen('lobby','lobby');}catch(e){$('prep-status').textContent=e.message;}finally{$('prep-start').disabled=false;}}};
+function startSolo(){score=0;current=null;runToken++;pool=new MonsterPool(settings.semilla,monsters);match={id:crypto.randomUUID(),modo:'solo',...settings,pasillos:0,precisiones:[],encuentros:[],racha:0,margen3:false,inicio:Date.now()};nextRound();}
+async function openProfile(uid=currentUser()?.uid){if(!currentUser()){showAccess();return;}const room=lobby.net.code&&lobby.net.data.meta?.estado==='lobby',net=lobby.net,back=state==='friends'?()=>{enter('friends','friends');}:room?()=>{state='lobby';screen('lobby','lobby');}:menu;
+  const blocked=room&&net.data.meta.uniqueAvatars?Object.entries(net.data.jugadores).filter(([id])=>id!==net.uid).map(([,p])=>p.avatar):[];
+  try{await setupProfile(signedOut=>signedOut===true?showAccess():back(),identity,blocked,room?async(name,avatar)=>{const old=net.data.jugadores[net.uid];if(net.data.meta.uniqueAvatars&&avatar!==old.avatar)await net.claim('avatars',avatar);try{await net.player({nombre:name,avatar,listo:false});}catch(e){if(avatar!==old.avatar)await net.release('avatars',avatar);throw e;}if(avatar!==old.avatar)await net.release('avatars',old.avatar);}:null,uid,monsters);enter('profile','profile');}catch(e){toast(authError(e));}}
+function openOtherProfile(uid){if($('modal').open)$('modal').close();openProfile(uid);}
+for(const id of ['profile-open','menu-profile'])$(id).onclick=()=>openProfile();document.addEventListener('pasillo-profile',e=>openOtherProfile(e.detail));
+const lobbyProfile=document.createElement('button');lobbyProfile.textContent='PERFIL';lobbyProfile.onclick=()=>openProfile();$('lobby-title').parentElement.append(lobbyProfile);
+$('friends-open').onclick=()=>{if(!currentUser()){showAccess();return;}enter('friends','friends');$('allow-requests').checked=getProfile()?.preferencias?.solicitudes!==false;renderFriends($('friends-list'),openOtherProfile);};$('friends-back').onclick=menu;
+$('friend-form').onsubmit=async e=>{e.preventDefault();try{await sendRequest($('friend-tag').value);$('friend-tag').value='';$('friends-status').textContent='Solicitud enviada.';}catch(e){$('friends-status').textContent=authError(e);}};
+$('allow-requests').onchange=async()=>{try{await requestsEnabled($('allow-requests').checked);}catch(e){toast(authError(e));}};
+$('friend-link').onclick=async()=>{const url=new URL(location.href);url.search='';url.searchParams.set('amigo',getProfile().codigoAmigo);try{await navigator.clipboard.writeText(url.href);toast('Copiado.');}catch{toast('No se pudo copiar.');}};
+function receiveInvitation(invite){invites.push(invite);showInvitation();}
+function showInvitation(){clearTimeout(inviteTimer);invites=invites.filter(i=>i.caducaEn>socialNow());const i=invites[0];$('invitation-notice').hidden=!i;if(!i)return;$('invitation-text').textContent=`${i.nombre} · ${{race:'Carrera',coop:'Cooperativo'}[i.modo]} · ${difficulty(i.dificultad).nombre} · ${i.sala}`;inviteTimer=setTimeout(()=>{invites.shift();showInvitation();},Math.max(0,i.caducaEn-socialNow()));}
+async function consumeInvite(accept){const i=invites.shift();if(!i)return;await dismissInvitation(i.id).catch(()=>{});showInvitation();if(!accept||i.caducaEn<=socialNow())return;online.stop();await lobby.net.leave();state='lobby';await lobby.open(i.modo,i.sala);}
+$('invitation-accept').onclick=()=>consumeInvite(true);$('invitation-reject').onclick=()=>consumeInvite(false);
+// Solo usa exactamente la misma bolsa y reglas de IA que los modos online.
+function nextRound(){current=pool.next();match.encuentros.push({id:current.id,ok:false});drawing.clear(false);analysis=null;analysisError='';submittedBlob=null;roundNumber=score+1;roundTimes=roundDurations(roundNumber,settings.dificultad);countMs=countdownMs(settings.dificultad,settings.semilla,roundNumber);lastCount=countMs/1000;
+  $('encounter-caption').textContent=`PASILLO ${String(roundNumber).padStart(2,'0')}`;$('encounter-caption').hidden=false;$('count-number').textContent=lastCount;$('count-number').hidden=false;$('monster-face').hidden=true;$('encounter-message').textContent='';hideAnalysisActions();setPortrait($('monster-face'),current);enter('count','encounter');audio.effect('count');}
 function flash(){enter('flash','encounter');$('count-number').hidden=true;$('encounter-caption').hidden=true;$('monster-face').hidden=false;audio.monster('appear',current);}
-function beginSearch(){enter('book','workbench');deadline=performance.now()+roundTimes.phaseMs;$('level').textContent=String(score+1).padStart(2,'0');book.go(Math.floor(Math.random()*monsters.length),false);selectTab('book');updateClock(roundTimes.phaseMs);}
+function beginSearch(){enter('book','workbench');deadline=performance.now()+roundTimes.phaseMs;$('level').textContent=String(roundNumber).padStart(2,'0');book.go(Math.floor(Math.random()*monsters.length),false);selectTab('book');updateClock(roundTimes.phaseMs);}
 function updateClock(ms,phaseMs=roundTimes.phaseMs){$('timer').textContent=String(Math.max(0,Math.ceil(ms/1000))).padStart(2,'0');$('timer').parentElement.classList.toggle('urgent',ms<=Math.min(TIEMPO_ALERTA*1000,phaseMs/3));}
-async function submit(){
-  if(online?.active){await online.submit();return;}
-  if(state!=='book'||paused)return;
-  if(performance.now()>=deadline){lose('Se acabó el tiempo.');return;}
-  enter('suspense','encounter');$('monster-face').hidden=false;$('count-number').hidden=true;$('encounter-caption').hidden=true;$('encounter-message').textContent='';hideAnalysisActions();audio.effect('breath');
-  const token=runToken;
-  try{submittedBlob=await drawing.exportBlob();if(token!==runToken||state!=='suspense')return;if(!submittedBlob){analysis={empty:true};return;}await analyze(token);}catch(error){if(token===runToken&&state==='suspense')analysisError=error.message;}
-}
-async function analyze(token){
-  analysis=null;analysisError='';hideAnalysisActions();$('encounter-message').textContent='';
-  try{const results=await recognizer.classify(submittedBlob,labels);if(token!==runToken||state!=='suspense')return;analysis={results};showDebug(results,labels);}
-  catch(error){if(token===runToken&&state==='suspense')analysisError=error.message;}
-}
-function resolveAnalysis(){
-  if(analysisError){$('encounter-message').textContent=analysisError;$('inference-retry').hidden=false;$('inference-menu').hidden=false;return;}
-  if(!analysis){$('encounter-message').textContent='Analizando…';return;}
-  if(analysis.empty){lose('No dibujaste nada.');return;}
-  const results=analysis.results,top=topResult(results);
-  if(!top){analysisError='La IA no devolvió un resultado. Puedes reintentar.';return;}
-  const word=labels.find(w=>w.id===top.label)?.nombre||top.label,recognized=`La IA reconoció: ${word} (${Math.round(top.score*100)} %).`;
-  if(judge(results,current)){score++;enter('win','encounter');audio.effect('flee');$('encounter-message').textContent=recognized;}
-  else lose(`${recognized} Debilidad incorrecta.`);
-}
-function lose(reason){lastReason=reason;hideAnalysisActions();setPortrait($('monster-face'),current);$('monster-face').hidden=false;$('count-number').hidden=true;$('encounter-caption').hidden=true;$('encounter-message').textContent='';enter('lose','encounter');audio.monster('scream',current);}
-function gameOver(){
-  enter('over','over');$('death-reason').textContent=lastReason;$('final-score').textContent=score;$('save-status').textContent=score?'':'Sin pasillos superados.';$('save-score').disabled=score===0;$('save-score').textContent='GUARDAR RÉCORD';$('player-name').readOnly=false;$('player-name').value=getProfile().nombre;$('death-player').replaceChildren(playerNode(getProfile(),false));saved=false;resultId=addResult(score,getProfile().avatar,getProfile().nombre);refreshBest();
-  if(!canPersist())$('save-status').textContent='Guardado solo en esta sesión.';
-  $('restart').focus({preventScroll:true});
-}
-function togglePause(){
-  if(online?.active)return;
-  if(!['book','count','flash','suspense','win'].includes(state))return;
-  if(!paused){paused=true;pausedAt=performance.now();drawing.enabled=false;drawing.active=null;document.body.classList.add('paused');$('pause-modal').showModal();audio.suspend();}
-  else{const dt=performance.now()-pausedAt;startedAt+=dt;if(state==='book')deadline+=dt;paused=false;document.body.classList.remove('paused');$('pause-modal').close();drawing.enabled=state==='book'&&tab==='draw';audio.resume();}
-}
+async function submit(){if(online?.active){await online.submit();return;}if(state!=='book'||paused)return;if(performance.now()>=deadline){lose('Se acabó el tiempo.');return;}submittedMs=roundTimes.phaseMs-(deadline-performance.now());drawing.cancel();enter('suspense','encounter');$('monster-face').hidden=false;$('count-number').hidden=true;$('encounter-caption').hidden=true;$('encounter-message').textContent='';hideAnalysisActions();audio.effect('breath');const token=runToken;
+  try{submittedBlob=await drawing.exportBlob();if(token!==runToken||state!=='suspense')return;if(!submittedBlob){analysis={empty:true};return;}await analyze(token);}catch(e){if(token===runToken&&state==='suspense')analysisError=e.message;}}
+async function analyze(token){analysis=null;analysisError='';hideAnalysisActions();$('encounter-message').textContent='';try{const results=await recognizer.classify(submittedBlob,labels);if(token!==runToken||state!=='suspense')return;analysis={results};showDebug(results,labels);}catch(e){if(token===runToken&&state==='suspense')analysisError=e.message;}}
+function resolveAnalysis(){if(analysisError){$('encounter-message').textContent=analysisError;$('inference-retry').hidden=false;$('inference-menu').hidden=false;return;}if(!analysis){$('encounter-message').textContent='Analizando…';return;}if(analysis.empty){lose('No dibujaste nada.');return;}
+  const results=analysis.results,win=winningResult(results,current,settings.dificultad),top=win||topResult(results);if(!top){analysisError='No se obtuvo resultado. Reintenta.';return;}const word=labels.find(w=>w.id===top.label)?.nombre||top.label,recognized=`La IA reconoció: ${word} (${Math.round(top.score*100)} %).`;
+  match.precisiones.push(win?.score||0);match.encuentros.at(-1).medido=true;
+  if(win){score++;match.encuentros.at(-1).ok=true;match.racha=score;if(roundTimes.phaseMs-submittedMs<=3000)match.margen3=true;enter('win','encounter');audio.effect('flee');$('encounter-message').textContent=recognized;}else lose(`${recognized} Debilidad incorrecta.`);}
+function lose(reason){if(match&&!match.encuentros.at(-1)?.medido){match.precisiones.push(0);match.encuentros.at(-1).medido=true;}lastReason=reason;hideAnalysisActions();drawing.cancel();setPortrait($('monster-face'),current);$('monster-face').hidden=false;$('count-number').hidden=true;$('encounter-caption').hidden=true;$('encounter-message').textContent='';enter('lose','encounter');audio.monster('scream',current);}
+function gameOver(){enter('over','over');$('death-reason').textContent=lastReason;$('final-score').textContent=score;$('death-player').replaceChildren(playerNode(getProfile(),false));match.pasillos=score;match.tiempoMs=Date.now()-match.inicio-(match.pausadoMs||0);addResult(score,getProfile().avatar,getProfile().nombre,settings.dificultad,settings.personalizada);refreshBest();saveSolo();$('restart').focus({preventScroll:true});}
+async function saveSolo(){if(soloSaving)return;soloSaving=true;const token=runToken,currentMatch=match;$('save-status').textContent='Guardando…';$('save-retry').hidden=true;try{const xp=await awardMatch(currentMatch),record=await publishRecord({modo:'solo',dificultad:currentMatch.dificultad,puntuacion:currentMatch.pasillos,personalizada:currentMatch.personalizada});if(token!==runToken)return;$('save-status').textContent=canPersist()?record.message:'Guardado en esta sesión.';$('save-retry').hidden=record.status!=='pending';if(xp.nivel>xp.nivelAnterior)levelUp(xp.nivel,'over');if(record.status==='global')refreshWorld();}catch{if(token===runToken){$('save-status').textContent='No se pudo guardar. Reintenta.';$('save-retry').hidden=false;}}finally{soloSaving=false;}}
+$('save-retry').onclick=saveSolo;
+function levelUp(nivel,returnScreen=online?.active?'podium':'over'){if(!['over','podium'].includes(document.body.dataset.screen))return;const token=runToken;enter('level-up','level-up');$('new-level').textContent=nivel;clearTimeout(levelTimer);levelTimer=setTimeout(()=>{if(token===runToken&&state==='level-up')enter(returnScreen,returnScreen);},1800);}
+function togglePause(){if(online?.active||!['book','count','flash','suspense','win'].includes(state))return;if(!paused){paused=true;pausedAt=performance.now();drawing.enabled=false;drawing.cancel();document.body.classList.add('paused');$('pause-modal').showModal();audio.suspend();}else{const dt=performance.now()-pausedAt;if(match)match.pausadoMs=(match.pausadoMs||0)+dt;startedAt+=dt;if(state==='book')deadline+=dt;paused=false;document.body.classList.remove('paused');$('pause-modal').close();drawing.enabled=state==='book'&&tab==='draw';audio.resume();}}
 $('pause').onclick=togglePause;$('resume').onclick=togglePause;$('quit').onclick=menu;$('pause-modal').addEventListener('cancel',e=>{e.preventDefault();togglePause();});
-$('tab-book').onclick=()=>selectTab('book');$('tab-draw').onclick=()=>selectTab('draw');$('show').onclick=submit;$('restart').onclick=()=>{score=0;current=null;runToken++;nextRound();};$('back-menu').onclick=menu;
-$('inference-retry').onclick=()=>{if(submittedBlob)analyze(runToken);};$('inference-menu').onclick=menu;
-$('save-form').onsubmit=async e=>{e.preventDefault();if(saved||$('save-score').disabled||score<1)return;const name=sanitizeName($('player-name').value);nameResult(resultId,name);$('player-name').value=name;$('player-name').readOnly=true;$('save-score').disabled=true;$('save-status').textContent='Enviando…';const token=runToken,result=await publishScore(name,score,getProfile().avatar,'solo',[],resultId);if(token!==runToken||state!=='over')return;saved=result.status==='global';$('save-status').textContent=saved?result.message:`Guardado local. ${result.message}`;$('save-score').disabled=saved;$('save-score').textContent=saved?'GUARDADO':'REINTENTAR ENVÍO';if(saved)refreshWorld();};
-for(const[colorName,hex]of COLORS){const b=document.createElement('button');b.style.setProperty('--swatch',hex);b.setAttribute('aria-label',colorName);b.title=colorName;b.classList.toggle('selected',hex===drawing.color);b.setAttribute('aria-pressed',String(hex===drawing.color));b.onclick=()=>{drawing.color=hex;for(const other of $('palette').children){other.classList.toggle('selected',other===b);other.setAttribute('aria-pressed',String(other===b));}};$('palette').append(b);}
-for(const b of document.querySelectorAll('[data-tool]'))b.onclick=()=>{drawing.tool=b.dataset.tool;for(const other of document.querySelectorAll('[data-tool]')){other.classList.toggle('selected',other===b);other.setAttribute('aria-pressed',String(other===b));}};
-$('brush-size').oninput=()=>{drawing.size=Number($('brush-size').value);$('size-value').textContent=drawing.size;};$('undo').onclick=()=>drawing.undo();$('clear').onclick=()=>{if(drawing.enabled)drawing.clear();};
-document.addEventListener('keydown',e=>{
-  if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)||$('modal').open)return;
-  if(e.key==='Escape'||e.key.toLowerCase()==='p'){e.preventDefault();togglePause();return;}
-  if(state!=='book'||paused)return;
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();drawing.undo();}
-  if(e.key.toLowerCase()==='b')selectTab('book');if(e.key.toLowerCase()==='l')selectTab('draw');
-  if(tab==='book'&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();book.go(book.index+(e.key==='ArrowLeft'?-1:1));}
-});
+$('tab-book').onclick=()=>selectTab('book');$('tab-draw').onclick=()=>selectTab('draw');$('show').onclick=submit;$('restart').onclick=()=>prepare('solo');$('back-menu').onclick=menu;$('inference-retry').onclick=()=>{if(submittedBlob)analyze(runToken);};$('inference-menu').onclick=menu;
+document.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)||$('modal').open)return;if(e.key==='Escape'||e.key.toLowerCase()==='p'){e.preventDefault();togglePause();return;}if(state!=='book'||paused)return;if(drawing.handleKey(e)){e.preventDefault();return;}if(e.key.toLowerCase()==='b')selectTab('book');if(e.key.toLowerCase()==='l')selectTab('draw');if(tab==='book'&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();book.go(book.index+(e.key==='ArrowLeft'?-1:1));}});
 document.addEventListener('visibilitychange',()=>{if(online?.active){if(document.hidden)audio.suspend();else{audio.resume();online.tick();}return;}if(document.hidden){if(!paused&&['count','flash','book','suspense','win'].includes(state))togglePause();else audio.suspend();}else if(!paused)audio.resume();});
-function tick(now){
-  if(!paused&&!online?.active&&!lobby?.net.code){const elapsed=now-startedAt,remaining=state==='book'?Math.max(0,deadline-now):roundTimes.phaseMs;audio.tick(now,state,remaining,score,roundTimes.phaseMs);
-    if(state==='count'){const n=Math.max(1,3-Math.floor(elapsed/1000));if(n!==lastCount){lastCount=n;$('count-number').textContent=n;audio.effect('count');}if(elapsed>=GAME.countMs)flash();}
-    else if(state==='flash'&&elapsed>=roundTimes.flashMs)beginSearch();
-    else if(state==='book'){updateClock(remaining);if(remaining<=0)lose('Se acabó el tiempo.');}
-    else if(state==='suspense'&&elapsed>=GAME.suspenseMs)resolveAnalysis();
-    else if(state==='win'&&elapsed>=GAME.winMs)nextRound();
-    else if(state==='lose'&&elapsed>=GAME.loseMs)gameOver();
-  }requestAnimationFrame(tick);
-}
-lobby=new Lobby(recognizer,data=>online?.sync(data),menu);
-online=new OnlineSession({net:lobby.net,recognizer,drawing,audio,getMonsters:()=>monsters,getLabels:()=>labels,getBook:()=>book,enter,selectTab,updateClock,onMenu:menu});
+function tick(now){if(!paused&&!online?.active&&!lobby?.net.code){const elapsed=now-startedAt,remaining=state==='book'?Math.max(0,deadline-now):roundTimes.phaseMs;audio.tick(now,state,remaining,score,roundTimes.phaseMs);
+  if(state==='count'){const n=Math.max(1,Math.ceil((countMs-elapsed)/1000));if(n!==lastCount){lastCount=n;$('count-number').textContent=n;audio.effect('count');}if(elapsed>=countMs)flash();}
+  else if(state==='flash'&&elapsed>=roundTimes.flashMs)beginSearch();else if(state==='book'){updateClock(remaining);if(remaining<=0)lose('Se acabó el tiempo.');}else if(state==='suspense'&&elapsed>=GAME.suspenseMs)resolveAnalysis();else if(state==='win'&&elapsed>=GAME.winMs)nextRound();else if(state==='lose'&&elapsed>=GAME.loseMs)gameOver();}requestAnimationFrame(tick);}
+lobby=new Lobby(recognizer,data=>online?.sync(data),menu,()=>prepare('online'),openOtherProfile);
+online=new OnlineSession({net:lobby.net,recognizer,drawing,audio,getMonsters:()=>monsters,getLabels:()=>labels,getBook:()=>book,enter,selectTab,updateClock,onMenu:menu,onLevelUp:levelUp});
+onBeforeSignOut(()=>lobby.net.leave());
 const bootReady=boot();requestAnimationFrame(tick);

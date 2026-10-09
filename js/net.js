@@ -1,8 +1,11 @@
-import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.2.0';
-import { firebaseApp, isConfigured, withDeadline } from './sdk.js?v=1.2.0';
-import { sanitizeName } from './storage.js?v=1.2.0';
+import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.3.0';
+import { firebaseApp, isConfigured, withDeadline } from './sdk.js?v=1.3.0';
+import { sanitizeName } from './storage.js?v=1.3.0';
+import {currentUser} from './auth.js?v=1.3.0';
+import {setPresence} from './friends.js?v=1.3.0';
+import {difficulty} from './difficulty.js?v=1.3.0';
 export const onlineConfigured = () => isConfigured() && !!FIREBASE_CONFIG.databaseURL;
-export const networkError = error => /permission|denied/i.test(error?.message || '') ? 'Acceso rechazado. Revisa las reglas de Firebase.' : /anonymous|operation-not-allowed/i.test(error?.message || '') ? 'Activa la autenticación anónima en Firebase.' : 'No se pudo conectar. Reintenta.';
+export const networkError = error => /permission|denied/i.test(error?.message || '') ? 'Acceso rechazado. Revisa las reglas de Firebase.' : /operation-not-allowed/i.test(error?.message || '') ? 'Activa Email/Contraseña en Firebase.' : error?.message==='Inicia sesión.'?'Inicia sesión.':'No se pudo conectar. Reintenta.';
 export const shortError = error => /^(Espera|Avatar|Ese rol|No se|La sala|La partida|Cooperativo|Faltan|Firebase)/.test(error?.message||'') ? error.message : networkError(error);
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 export class Network {
@@ -12,15 +15,15 @@ export class Network {
   }
   now() {return Date.now() + this.offset;}
   async connect() {
-    if (this.db) return;
+    if (!currentUser())throw new Error('Inicia sesión.');
+    if (this.db && this.uid===currentUser().uid) return;
+    if(this.db){for(const stop of this.globalStops.splice(0))stop();this.db=null;}
     if (!onlineConfigured()) throw new Error('Firebase no configurado.');
     if (this.loading) return this.loading;
     this.loading = withDeadline((async () => {
       const app = await firebaseApp();
-      const auth = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js');
       this.sdk = await import('https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js');
-      const service = auth.getAuth(app);
-      const user = service.currentUser || (await auth.signInAnonymously(service)).user;
+      const user = currentUser();
       this.uid = user.uid; this.db = this.sdk.getDatabase(app);
       this.globalStops.push(this.sdk.onValue(this.sdk.ref(this.db,'.info/serverTimeOffset'), snap => {this.offset = snap.val() || 0;}));
       await new Promise((resolve,reject) => {
@@ -44,13 +47,13 @@ export class Network {
   async set(path, value) {this.budget(); return withDeadline(this.sdk.set(this.ref(path),value));}
   async update(path, values) {this.budget(); return withDeadline(this.sdk.update(this.ref(path),values));}
   async transaction(path, update) {this.budget(); return withDeadline(this.sdk.runTransaction(this.ref(path),update,{applyLocally:false}));}
-  async create(mode, profile) {
+  async create(mode, profile,settings={}) {
     await this.connect(); await this.leave();
     for (let attempt=0;attempt<8;attempt++) {
       this.code = Array.from(crypto.getRandomValues(new Uint8Array(4)), n => alphabet[n%alphabet.length]).join('');
       const created = await this.transaction('meta', old => {
         if (old) return;
-        return {host:this.uid,modo:mode,estado:'lobby',ronda:0,pasillos:0,vidas:ONLINE.lives,inicioFase:0,semilla:0,createdAt:this.now(),expiresAt:this.now()+ONLINE.roomTtlMs,uniqueAvatars:ONLINE.uniqueAvatars};
+        return {host:this.uid,modo:mode,estado:'lobby',ronda:0,pasillos:0,vidas:difficulty(settings.dificultad).vidas,inicioFase:0,semilla:settings.semilla||0,dificultad:settings.dificultad||'normal',personalizada:!!settings.personalizada,createdAt:this.now(),expiresAt:this.now()+ONLINE.roomTtlMs,uniqueAvatars:ONLINE.uniqueAvatars};
       });
       if (created.committed) {await this.join(this.code,profile); return;}
     }
@@ -93,6 +96,7 @@ export class Network {
     const player = this.ref(`jugadores/${this.uid}`);
     await this.sdk.onDisconnect(player).update({ausente:true,listo:false,changed:this.sdk.serverTimestamp()});
     await this.update(`jugadores/${this.uid}`, {ausente:false,changed:this.now()});
+    await setPresence('enSala',this.code);
   }
   async claim(type, id) {
     const result = await this.transaction(`claims/${type}/${id}`, owner => owner && owner !== this.uid ? undefined : this.uid);
@@ -138,6 +142,7 @@ export class Network {
       } catch {}
     }
     this.code=''; this.data={meta:null,jugadores:{},entregas:{},resultados:{},veredictos:{},chat:{},live:{},whispers:{},audits:{}}; this.error='';
+    setPresence().catch(()=>{});
     try {sessionStorage.removeItem('pasillo-room');} catch {}
   }
 }
