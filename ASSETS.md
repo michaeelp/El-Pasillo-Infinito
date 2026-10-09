@@ -1,6 +1,6 @@
 # Recursos visuales
 
-22 retratos generados individualmente; archivos finales WebP de 1024 × 1024.
+30 retratos generados individualmente; archivos finales WebP de 1024 × 1024. Los primeros 22 conservan sus archivos originales. Los 8 nuevos incluyen además PNG de respaldo; lista completa en AMPLIACION3.md.
 
 01. `assets/monsters/01-el-descarnado.webp` — El Descarnado
 02. `assets/monsters/02-madre-arana.webp` — Madre Araña
@@ -34,3 +34,5 @@
 - `assets/ui/cuero.webp`
 
 Prompts completos: `assets/PROMPTS.md`.
+
+Los prompts adicionales están en assets/PROMPTS-AMPLIACION3.md. Los 60 WAV originales y sus rutas están en AUDIO.md.

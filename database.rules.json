@@ -3,7 +3,9 @@
     ".read": false,
     ".write": false,
     "rooms": {
-      ".indexOn": ["meta/expiresAt"],
+      ".indexOn": [
+        "meta/expiresAt"
+      ],
       "$code": {
         ".write": "auth != null && !newData.exists() && data.child('meta/expiresAt').isNumber() && data.child('meta/expiresAt').val() < now",
         ".validate": "newData.child('meta/expiresAt').val() > now",
@@ -52,7 +54,7 @@
             ".validate": "newData.isNumber() && newData.val() % 1 == 0"
           },
           "lastMonster": {
-            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 22"
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 30"
           },
           "ok": {
             ".validate": "newData.isBoolean()"
@@ -157,7 +159,7 @@
               ".write": "auth != null && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'vigia' && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
               ".validate": "newData.hasChildren(['monstruoId'])",
               "monstruoId": {
-                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 22"
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 30"
               },
               "$other": {
                 ".validate": false
@@ -190,7 +192,7 @@
               ".write": "auth != null && auth.uid == $uid && !data.exists() && root.child('rooms').child($code).child('jugadores').child($uid).exists() && root.child('rooms').child($code).child('meta/estado').val() == 'round' && (root.child('rooms').child($code).child('meta/modo').val() == 'race' || root.child('rooms').child($code).child('meta/roles').child($uid).val() == 'dibujante') && $round == root.child('rooms').child($code).child('meta/match').val() + '_' + root.child('rooms').child($code).child('meta/ronda').val()",
               ".validate": "newData.hasChildren(['etiqueta','confianza','precision','ms','miniatura','timeout','t']) && (newData.child('timeout').val() == true || root.child('rooms').child($code).child('entregas').child($round).child($uid).exists())",
               "etiqueta": {
-                ".validate": "newData.isString() && newData.val().length <= 40"
+                ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^(alarm_clock|apple|axe|ball|balloon|bandage|bell|bird|bone|book|broom|bucket|cake|camera|candle|cat|cheese|coffee_cup|coin|cross|crown|diamond|dog|fire|fishing_hook|fishing_net|flashlight|flower|hammer|heart|house|ice_cream|lamp|life_ring|magnet|mirror|mousetrap|paintbrush|pencil|ring|rope|saw|scales|scissors|seagull|shoe|shovel|smiley_face|snowflake|sun|sunglasses|teddy_bear|toothbrush|towel|tree|umbrella)$/))"
               },
               "confianza": {
                 ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
@@ -206,7 +208,7 @@
               },
               "distribution": {
                 "$label": {
-                  ".validate": "$label.matches(/^(flashlight|candle|sun|broom|shoe|umbrella|eye|star|cat|lightning bolt|sword|key|smiley face|heart|hand|face|scissors|flower|cloud|hammer|clock|bed|moon|mushroom|axe|book|pizza|cookie|bird|hat|camera|cup|tree|apple|bell|banana|carrot|fish|saw|house|door|ladder)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
+                  ".validate": "$label.matches(/^(alarm_clock|apple|axe|ball|balloon|bandage|bell|bird|bone|book|broom|bucket|cake|camera|candle|cat|cheese|coffee_cup|coin|cross|crown|diamond|dog|fire|fishing_hook|fishing_net|flashlight|flower|hammer|heart|house|ice_cream|lamp|life_ring|magnet|mirror|mousetrap|paintbrush|pencil|ring|rope|saw|scales|scissors|seagull|shoe|shovel|smiley_face|snowflake|sun|sunglasses|teddy_bear|toothbrush|towel|tree|umbrella)$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"
                 }
               },
               "timeout": {

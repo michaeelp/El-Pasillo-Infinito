@@ -1,10 +1,10 @@
-# El Pasillo Infinito 1.1.0
+# El Pasillo Infinito 1.2.0
 
-Juego estático en español: SOLO, Carrera online de 2 a 8 jugadores y Cooperativo de 3. Conserva los 22 monstruos, el libro, el lienzo y CLIP local. Esta versión incluye tu bloque público FIREBASE_CONFIG y actualiza todos los imports y recursos a ?v=1.1.0.
+Juego estático en español: SOLO, Carrera online de 2 a 8 jugadores y Cooperativo de 3. Incluye 30 monstruos, lore con pistas, 60 sonidos propios, libro, lienzo y CLIP local. Los 22 retratos originales permanecen intactos. Esta versión incluye tu bloque público FIREBASE_CONFIG y actualiza todos los imports y recursos a ?v=1.2.0.
 
 ## Publicar
 
-Sube el contenido de esta carpeta a GitHub, manteniendo assets/, js/ y css/. index.html debe estar en la raíz publicada. No subas solamente el ZIP ni mezcles módulos de la versión anterior. Activa GitHub Pages desde main y /(root). Comprueba que el menú muestra v1.1.0 y recarga con Ctrl+F5.
+Sube el contenido de esta carpeta a GitHub, manteniendo assets/, js/ y css/. index.html debe estar en la raíz publicada. No subas solamente el ZIP ni mezcles módulos de la versión anterior. Activa GitHub Pages desde main y /(root). Comprueba que el menú muestra v1.2.0 y recarga con Ctrl+F5.
 
 Para probar localmente: python3 -m http.server 8000 y http://localhost:8000. No abras index.html con doble clic.
 
@@ -15,7 +15,7 @@ Para probar localmente: python3 -m http.server 8000 y http://localhost:8000. No 
 3. Authentication > Settings > Authorized domains: añade el dominio de GitHub Pages.
 4. Realtime Database: comprueba que está creada y que databaseURL en js/config.js corresponde a ella.
 5. En Realtime Database > Rules, reemplaza las reglas completas por database.rules.json y publica.
-6. Crea Cloud Firestore si todavía no existe. En Rules publica firestore.rules completo.
+6. En Firestore Database > Rules publica firestore.rules completo. Si usas otro proyecto, crea primero su base de Firestore.
 7. Publica todos los archivos del juego y prueba con navegadores o dispositivos diferentes. Dos pestañas del mismo navegador pueden compartir el mismo usuario anónimo.
 
 Sin conexión o sin Firebase válido, SOLO sigue disponible. Los modos online se deshabilitan al comprobar la conexión. Las reglas anteriores de récords ya no sirven: ahora los documentos incluyen avatar.
@@ -38,7 +38,7 @@ En js/config.js:
 
 SOLO usa pasillos superados + 1. Cooperativo usa el progreso del equipo + 1, no el número de intentos fallidos. Carrera usa la ronda, común a todos. El reloj y la rapidez usan la duración actual.
 
-El libro solo muestra retrato, nombre, debilidades y número de página. monsters.json no contiene apariencia ni anotaciones. avatars.json solo contiene id, nombre, ruta y color.
+El libro muestra el retrato en la página izquierda y nombre, lore y número de página en la derecha. No muestra debilidades, su cantidad ni apariencia. monsters.json no contiene apariencia ni anotaciones. avatars.json solo contiene id, nombre, ruta y color.
 
 ## Tipografía y licencias
 
@@ -63,13 +63,13 @@ Si una sala de Carrera conserva asientos 4..8 después de salir otros jugadores,
 
 Carrera usa semilla compartida y secuencia determinista sin repetición consecutiva. Cada jugador entrega y ve su propio análisis y susto. Los resultados comunes incluyen miniaturas, puntos y vidas. Con 0 vidas pasa a Fantasma, con susurros limitados a uno cada 20 segundos. Gana el mayor total, con desempate por precisión media.
 
-Puntos: (100 + 400*A + 300*(1-t/T)^1.5) * min(1.5, 1 + 0.1*racha). T es el tiempo de esa ronda; t está acotado a ese intervalo. La primera victoria lleva racha 1 y multiplicador 1.1; una derrota da 0 y reinicia la racha. Ejemplos: A=1 y t=0, primera victoria: 880. A=0.5 y t=T/2, primera victoria: 447. Al quinto acierto consecutivo se alcanza el tope de 1.5. Una desconexión no suma puntos en esa ronda.
+Puntos: (100 + 400*min(1,p/PRECISION_REF) + 300*(1-t/T)^1.5) * min(1.5, 1 + 0.1*racha). p es la probabilidad de la única etiqueta ganadora; nunca se suman las debilidades. PRECISION_REF = 0.6, configurable. T es el tiempo de esa ronda; t está acotado a ese intervalo. La primera victoria lleva racha 1 y multiplicador 1.1; una derrota da 0 y reinicia la racha. Ejemplos: p=0.6 y t=0, primera victoria: 880. p=0.3 y t=T/2, primera victoria: 447. Al quinto acierto consecutivo se alcanza el tope de 1.5. Una desconexión no suma puntos en esa ronda.
 
 Cooperativo: Vigía ve el flash; Bibliotecario solo el libro; Dibujante solo el lienzo y ¡MOSTRAR!. Los otros dos reciben una vista de 96 px en lotes de 300 ms. El resultado consume una vida o suma un pasillo y, al acertar, rota los roles. Una desconexión pausa hasta 15 segundos; después termina conservando el progreso. F5 recupera la sala mediante la sesión anónima y sessionStorage.
 
 ### Secreto cooperativo
 
-Una semilla pública que permita derivar monstruos contradice el secreto del cooperativo. Por eso SOLO la Carrera publica una semilla útil; en Cooperativo semilla es 0. El Vigía elige el monstruo con crypto y lo guarda en secreto/{partida_ronda}/{uidVigia}, sin repetir el anterior. Bibliotecario y Dibujante nunca reciben su id antes del resultado, aunque el anfitrión sea uno de ellos. El Dibujante clasifica contra todas las debilidades y el Vigía evalúa el resultado.
+Una semilla pública que permita derivar monstruos contradice el secreto del cooperativo. Por eso SOLO la Carrera publica una semilla útil; en Cooperativo semilla es 0. El Vigía elige el monstruo con crypto y lo guarda en secreto/{partida_ronda}/{uidVigia}, sin repetir el anterior. Bibliotecario y Dibujante nunca reciben su id antes del resultado, aunque el anfitrión sea uno de ellos. El Dibujante clasifica contra la unión de todas las debilidades y el Vigía evalúa el resultado.
 
 Esto protege lecturas entre usuarios mediante reglas; no hace imposible que un Vigía o anfitrión modificado haga trampas. La autoridad de partida y la IA siguen estando en clientes. Un competitivo resistente a clientes maliciosos necesitaría arbitraje de servidor.
 
@@ -100,8 +100,28 @@ js/background.js y fonts.js: fondos y fuentes. profile.js: perfiles. net.js y sd
 
 Sin compilación ni dependencias npm para jugar. Para pruebas opcionales: npm install, npm test. Emuladores: npm run test:rules; requieren Java. Para pruebas de navegador: npx playwright install chromium, iniciar los emuladores locales y ejecutar node tests/ui.cjs y node tests/online-ui.cjs. Usan el SDK real contra emuladores y un doble de CLIP, sin escribir en producción.
 
-PRUEBAS.md distingue lo verificado de las pruebas pendientes. Las pruebas anteriores del CLIP real se conservan en pruebas-clip.json; esta actualización no sustituye el modelo por una simulación.
+PRUEBAS.md distingue lo verificado de las pruebas pendientes. Las pruebas anteriores del CLIP real se conservan en pruebas-clip.json como historial del vocabulario anterior; no validan las 56 etiquetas actuales. El modelo real sigue en el Worker del juego.
 
 ## Audio
 
-Se mantienen música y efectos sintetizados con Web Audio, controles de volumen, silencio y sustos atenuados. No se han añadido grabaciones externas porque todavía no se proporcionaron archivos de sonido.
+Cada monstruo tiene dos WAV originales sintetizados: aparición y screamer. Se cargan una vez, se decodifican y quedan en caché. La reproducción respeta efectos, silencio y sustos atenuados; si falta un WAV usa el efecto Web Audio de respaldo. La música ambiental sigue en Web Audio. Tabla completa y sustitución de archivos: AUDIO.md. Regenerar: python3 tools/generate_audio.py.
+
+## Ampliación 3
+
+monsters.json es la fuente única del catálogo: id, nombre, imagen, sonidoAparicion, sonidoScreamer, lore y debilidades (id, nombre, etiquetaCLIP). labelsFrom() deriva automáticamente los 56 objetos distintos; el Worker recibe sus frases inglesas descriptivas, las combina con la plantilla y devuelve resultados que el Recognizer convierte a IDs. Solo gana la etiqueta de mayor probabilidad si pertenece al monstruo actual. No se acepta la segunda etiqueta ni una luz similar como acierto.
+
+?debug=1 muestra el top 5 y el grupo confusables de js/config.js: linterna, sol, fuego, vela y lámpara. PRECISION_REF cambia el bono de precisión; no altera qué dibujo gana. Los monstruos con una, dos o tres debilidades usan la misma fórmula.
+
+Los 30 textos están también en LORE.md. tools/validate_lore.mjs comprueba rangos de palabras, nombres propios de cada debilidad, plurales, acentos y sinónimos conocidos. La revisión de pistas y apariencia es editorial; el script no pretende entender el significado. Ejecutar: node tools/validate_lore.mjs.
+
+Los ocho retratos nuevos incluyen PNG de respaldo; lista en AMPLIACION3.md. Los límites y etiquetas de Realtime Database se generan desde el catálogo: node tools/update_rules.mjs. Después publica database.rules.json completo en Firebase. No mantengas un vocabulario manual en el cliente.
+
+## Leaderboard reparado
+
+Récords permite elegir SOLO, Carrera o Cooperativo, muestra las diez puntuaciones mayores y permite reintentar una lectura fallida. Los registros antiguos sin avatar se siguen leyendo con un avatar de respaldo. Los errores de permisos se distinguen de la falta de conexión; no se ocultan tras un mensaje genérico.
+
+El guardado de SOLO y el podio online permiten REINTENTAR ENVÍO. Cada resultado conserva el mismo ID: si una respuesta se pierde después de guardar, el siguiente intento confirma el documento existente sin crear otro. La consulta y la confirmación se hacen contra el servidor. Un resultado cero no se publica. Los récords locales de SOLO se guardan al terminar.
+
+Para activar las nuevas escrituras, publica firestore.rules completo en Firestore Database > Rules: las reglas anteriores que solo aceptan n/p/t pueden rechazar los campos de avatar o equipo. Las pruebas de escritura usan exclusivamente el proyecto demo-pasillo de los emuladores. Se comprobó que la lectura pública de tu colección real responde, pero no se modificaron sus reglas ni se escribieron puntuaciones de prueba en ella.
+
+La prueba adicional es node tests/expansion-ui.cjs con emuladores activos. Comprueba los 30 libros, sonido, debug, tres rankings, lectura de registros antiguos, errores de permisos y reintento sin duplicados.

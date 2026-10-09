@@ -3,18 +3,19 @@
     "id": 1,
     "nombre": "El Descarnado",
     "imagen": "assets/monsters/01-el-descarnado.webp",
+    "sonidoAparicion": "assets/audio/appear/1.wav",
+    "sonidoScreamer": "assets/audio/scream/1.wav",
+    "lore": "Antes de desaparecer, enterraba a quienes encontraban el pasillo. Un testigo lo vio detenerse cuando alguien abrió una fosa de un solo golpe. Otro sobrevivió siguiendo un ladrido que respondió desde detrás de la puerta.",
     "debilidades": [
       {
-        "en": "flashlight",
-        "es": "linterna"
+        "id": "shovel",
+        "nombre": "pala",
+        "etiquetaCLIP": "a digging shovel"
       },
       {
-        "en": "candle",
-        "es": "vela"
-      },
-      {
-        "en": "sun",
-        "es": "sol"
+        "id": "dog",
+        "nombre": "perro",
+        "etiquetaCLIP": "a dog"
       }
     ]
   },
@@ -22,18 +23,19 @@
     "id": 2,
     "nombre": "Madre Araña",
     "imagen": "assets/monsters/02-madre-arana.webp",
+    "sonidoAparicion": "assets/audio/appear/2.wav",
+    "sonidoScreamer": "assets/audio/scream/2.wav",
+    "lore": "Se instaló en un edificio vacío y cubrió sus puertas con hilos pegajosos. La primera criada escapó arrastrando por el suelo las cerdas de su herramienta. El segundo visitante logró huir después de golpear el umbral con lo que calzaba.",
     "debilidades": [
       {
-        "en": "broom",
-        "es": "escoba"
+        "id": "broom",
+        "nombre": "escoba",
+        "etiquetaCLIP": "a broom"
       },
       {
-        "en": "shoe",
-        "es": "zapato"
-      },
-      {
-        "en": "umbrella",
-        "es": "paraguas"
+        "id": "shoe",
+        "nombre": "zapato",
+        "etiquetaCLIP": "a shoe"
       }
     ]
   },
@@ -41,18 +43,19 @@
     "id": 3,
     "nombre": "Cíclope Hueco",
     "imagen": "assets/monsters/03-ciclope-hueco.webp",
+    "sonidoAparicion": "assets/audio/appear/3.wav",
+    "sonidoScreamer": "assets/audio/scream/3.wav",
+    "lore": "Fue castigado por vigilar a sus vecinos incluso mientras dormían. Dejaba de perseguir a quien miraba a través de cristales oscuros. Un escribiente logró encerrarlo trazando una línea de grafito alrededor de su mesa, sin levantar la punta.",
     "debilidades": [
       {
-        "en": "eye",
-        "es": "ojo"
+        "id": "sunglasses",
+        "nombre": "gafas de sol",
+        "etiquetaCLIP": "a pair of sunglasses"
       },
       {
-        "en": "star",
-        "es": "estrella"
-      },
-      {
-        "en": "cat",
-        "es": "gato"
+        "id": "pencil",
+        "nombre": "lápiz",
+        "etiquetaCLIP": "a pencil"
       }
     ]
   },
@@ -60,18 +63,14 @@
     "id": 4,
     "nombre": "Sombra Sonriente",
     "imagen": "assets/monsters/04-sombra-sonriente.webp",
+    "sonidoAparicion": "assets/audio/appear/4.wav",
+    "sonidoScreamer": "assets/audio/scream/4.wav",
+    "lore": "Aprendió a seguir a los viajeros cuando se apagaban los pasillos. Solo retrocede ante un haz estrecho que puede dirigirse con una mano, incluso lejos de cualquier enchufe.",
     "debilidades": [
       {
-        "en": "sun",
-        "es": "sol"
-      },
-      {
-        "en": "flashlight",
-        "es": "linterna"
-      },
-      {
-        "en": "lightning bolt",
-        "es": "rayo"
+        "id": "flashlight",
+        "nombre": "linterna",
+        "etiquetaCLIP": "a flashlight"
       }
     ]
   },
@@ -79,18 +78,14 @@
     "id": 5,
     "nombre": "Devora-Luz",
     "imagen": "assets/monsters/05-devora-luz.webp",
+    "sonidoAparicion": "assets/audio/appear/5.wav",
+    "sonidoScreamer": "assets/audio/scream/5.wav",
+    "lore": "Durante años dejó a oscuras todas las habitaciones por las que pasaba. La única vez que huyó, un huésped le devolvió su propia presencia desde una superficie plateada.",
     "debilidades": [
       {
-        "en": "flashlight",
-        "es": "linterna"
-      },
-      {
-        "en": "sun",
-        "es": "sol"
-      },
-      {
-        "en": "star",
-        "es": "estrella"
+        "id": "mirror",
+        "nombre": "espejo",
+        "etiquetaCLIP": "a mirror"
       }
     ]
   },
@@ -98,18 +93,19 @@
     "id": 6,
     "nombre": "Rey Cuervo",
     "imagen": "assets/monsters/06-rey-cuervo.webp",
+    "sonidoAparicion": "assets/audio/appear/6.wav",
+    "sonidoScreamer": "assets/audio/scream/6.wav",
+    "lore": "Reclamó las riquezas del salón donde desapareció el último monarca. Le inquieta el cerco de oro con puntas que distingue al soberano. Su codicia lo inmoviliza ante una piedra transparente tallada, capaz de rayar cualquier otra.",
     "debilidades": [
       {
-        "en": "sword",
-        "es": "espada"
+        "id": "crown",
+        "nombre": "corona",
+        "etiquetaCLIP": "a royal crown"
       },
       {
-        "en": "key",
-        "es": "llave"
-      },
-      {
-        "en": "smiley face",
-        "es": "cara sonriente"
+        "id": "diamond",
+        "nombre": "diamante",
+        "etiquetaCLIP": "a diamond gemstone"
       }
     ]
   },
@@ -117,18 +113,19 @@
     "id": 7,
     "nombre": "Niño Sin Rostro",
     "imagen": "assets/monsters/07-nino-sin-rostro.webp",
+    "sonidoAparicion": "assets/audio/appear/7.wav",
+    "sonidoScreamer": "assets/audio/scream/7.wav",
+    "lore": "Lo olvidaron en una guardería cuando cerraron el edificio. Se acerca a quien reproduce la expresión alegre que los niños dibujaban en sus cuadernos. Solo deja de llorar cuando recibe el compañero de tela rellena al que abrazaban para dormir.",
     "debilidades": [
       {
-        "en": "heart",
-        "es": "corazón"
+        "id": "smiley_face",
+        "nombre": "cara sonriente",
+        "etiquetaCLIP": "a smiling face symbol"
       },
       {
-        "en": "hand",
-        "es": "mano"
-      },
-      {
-        "en": "face",
-        "es": "cara"
+        "id": "teddy_bear",
+        "nombre": "osito de peluche",
+        "etiquetaCLIP": "a teddy bear"
       }
     ]
   },
@@ -136,18 +133,24 @@
     "id": 8,
     "nombre": "La Novia Cosida",
     "imagen": "assets/monsters/08-la-novia-cosida.webp",
+    "sonidoAparicion": "assets/audio/appear/8.wav",
+    "sonidoScreamer": "assets/audio/scream/8.wav",
+    "lore": "La ceremonia terminó cuando el prometido no llegó. Desde entonces espera tres pruebas de aquella promesa: el brote perfumado que iba sobre el altar, el círculo que debían intercambiar y el símbolo con que firmaban sus cartas de amor.",
     "debilidades": [
       {
-        "en": "scissors",
-        "es": "tijeras"
+        "id": "flower",
+        "nombre": "flor",
+        "etiquetaCLIP": "a flower"
       },
       {
-        "en": "flower",
-        "es": "flor"
+        "id": "ring",
+        "nombre": "anillo",
+        "etiquetaCLIP": "a finger ring"
       },
       {
-        "en": "heart",
-        "es": "corazón"
+        "id": "heart",
+        "nombre": "corazón",
+        "etiquetaCLIP": "a heart symbol"
       }
     ]
   },
@@ -155,18 +158,14 @@
     "id": 9,
     "nombre": "Gárgola Llorona",
     "imagen": "assets/monsters/09-gargola-llorona.webp",
+    "sonidoAparicion": "assets/audio/appear/9.wav",
+    "sonidoScreamer": "assets/audio/scream/9.wav",
+    "lore": "Custodiaba una torre cuyos obreros desaparecieron uno a uno. Dejó pasar al último cuando oyó tres impactos contra un clavo; desde entonces no tolera ese ritmo de trabajo.",
     "debilidades": [
       {
-        "en": "umbrella",
-        "es": "paraguas"
-      },
-      {
-        "en": "cloud",
-        "es": "nube"
-      },
-      {
-        "en": "hammer",
-        "es": "martillo"
+        "id": "hammer",
+        "nombre": "martillo",
+        "etiquetaCLIP": "a hammer"
       }
     ]
   },
@@ -174,18 +173,19 @@
     "id": 10,
     "nombre": "Comeduermes",
     "imagen": "assets/monsters/10-comeduermes.webp",
+    "sonidoAparicion": "assets/audio/appear/10.wav",
+    "sonidoScreamer": "assets/audio/scream/10.wav",
+    "lore": "Nació en una sala donde los vigilantes se quedaban dormidos sin despertar. Retrocede ante el timbre que interrumpe el descanso a una hora marcada. También abandona a quien bebe el líquido oscuro y amargo preparado para mantenerse despierto.",
     "debilidades": [
       {
-        "en": "clock",
-        "es": "reloj"
+        "id": "alarm_clock",
+        "nombre": "reloj despertador",
+        "etiquetaCLIP": "an alarm clock"
       },
       {
-        "en": "bed",
-        "es": "cama"
-      },
-      {
-        "en": "moon",
-        "es": "luna"
+        "id": "coffee_cup",
+        "nombre": "taza de café",
+        "etiquetaCLIP": "a cup of coffee"
       }
     ]
   },
@@ -193,18 +193,14 @@
     "id": 11,
     "nombre": "Hongo Podrido",
     "imagen": "assets/monsters/11-hongo-podrido.webp",
+    "sonidoAparicion": "assets/audio/appear/11.wav",
+    "sonidoScreamer": "assets/audio/scream/11.wav",
+    "lore": "Surgió en un almacén húmedo, cerrado desde el invierno. Solo desaparece al abrir el techo durante un mediodía despejado, sin encender nada; vuelve al caer la noche.",
     "debilidades": [
       {
-        "en": "mushroom",
-        "es": "hongo"
-      },
-      {
-        "en": "axe",
-        "es": "hacha"
-      },
-      {
-        "en": "sun",
-        "es": "sol"
+        "id": "sun",
+        "nombre": "sol",
+        "etiquetaCLIP": "the sun with rays"
       }
     ]
   },
@@ -212,18 +208,19 @@
     "id": 12,
     "nombre": "Verdugo Hueco",
     "imagen": "assets/monsters/12-verdugo-hueco.webp",
+    "sonidoAparicion": "assets/audio/appear/12.wav",
+    "sonidoScreamer": "assets/audio/scream/12.wav",
+    "lore": "Cumplía condenas sin escuchar a los acusados. El último juicio quedó suspendido cuando dos cargas iguales permanecieron en equilibrio. Desde entonces rehúye tanto esa medida justa como las palabras que el juez consulta entre páginas encuadernadas.",
     "debilidades": [
       {
-        "en": "book",
-        "es": "libro"
+        "id": "scales",
+        "nombre": "balanza",
+        "etiquetaCLIP": "a balance scale with two pans"
       },
       {
-        "en": "key",
-        "es": "llave"
-      },
-      {
-        "en": "heart",
-        "es": "corazón"
+        "id": "book",
+        "nombre": "libro",
+        "etiquetaCLIP": "an open book"
       }
     ]
   },
@@ -231,18 +228,19 @@
     "id": 13,
     "nombre": "Payaso Abisal",
     "imagen": "assets/monsters/13-payaso-abisal.webp",
+    "sonidoAparicion": "assets/audio/appear/13.wav",
+    "sonidoScreamer": "assets/audio/scream/13.wav",
+    "lore": "El circo cerró después de que desaparecieran los niños de la última función. Conserva una deuda con el vendedor de regalos inflados atados a un hilo. Otro testigo lo detuvo ofreciéndole el dulce frío que servían sobre un cono.",
     "debilidades": [
       {
-        "en": "smiley face",
-        "es": "cara sonriente"
+        "id": "balloon",
+        "nombre": "globo",
+        "etiquetaCLIP": "a balloon on a string"
       },
       {
-        "en": "pizza",
-        "es": "pizza"
-      },
-      {
-        "en": "cookie",
-        "es": "galleta"
+        "id": "ice_cream",
+        "nombre": "helado",
+        "etiquetaCLIP": "an ice cream cone"
       }
     ]
   },
@@ -250,18 +248,14 @@
     "id": 14,
     "nombre": "Reptante",
     "imagen": "assets/monsters/14-reptante.webp",
+    "sonidoAparicion": "assets/audio/appear/14.wav",
+    "sonidoScreamer": "assets/audio/scream/14.wav",
+    "lore": "Entró con una tormenta de invierno y dejó los caminos vacíos. Sus rastros terminan siempre donde caen diminutas estrellas de seis puntas que se deshacen al tocarlas.",
     "debilidades": [
       {
-        "en": "cat",
-        "es": "gato"
-      },
-      {
-        "en": "bird",
-        "es": "pájaro"
-      },
-      {
-        "en": "hat",
-        "es": "sombrero"
+        "id": "snowflake",
+        "nombre": "copo de nieve",
+        "etiquetaCLIP": "a six-pointed snowflake"
       }
     ]
   },
@@ -269,18 +263,14 @@
     "id": 15,
     "nombre": "Ojo Múltiple",
     "imagen": "assets/monsters/15-ojo-multiple.webp",
+    "sonidoAparicion": "assets/audio/appear/15.wav",
+    "sonidoScreamer": "assets/audio/scream/15.wav",
+    "lore": "Robaba los recuerdos de quienes cruzaban el corredor. Un fotógrafo conservó el suyo al detener un instante dentro de un rectángulo de papel, después de un clic mecánico.",
     "debilidades": [
       {
-        "en": "eye",
-        "es": "ojo"
-      },
-      {
-        "en": "hand",
-        "es": "mano"
-      },
-      {
-        "en": "camera",
-        "es": "cámara"
+        "id": "camera",
+        "nombre": "cámara",
+        "etiquetaCLIP": "a photographic camera"
       }
     ]
   },
@@ -288,18 +278,19 @@
     "id": 16,
     "nombre": "Espectro Mojado",
     "imagen": "assets/monsters/16-espectro-mojado.webp",
+    "sonidoAparicion": "assets/audio/appear/16.wav",
+    "sonidoScreamer": "assets/audio/scream/16.wav",
+    "lore": "Volvió al embarcadero después de que nadie respondiera a sus gritos. Todavía busca el aro flotante que arrojaron demasiado tarde. Una lavandera consiguió apartarlo al envolver lo empapado en el tejido absorbente que colgaba junto al baño.",
     "debilidades": [
       {
-        "en": "sun",
-        "es": "sol"
+        "id": "life_ring",
+        "nombre": "salvavidas",
+        "etiquetaCLIP": "a life ring lifebuoy"
       },
       {
-        "en": "bird",
-        "es": "pájaro"
-      },
-      {
-        "en": "cup",
-        "es": "taza"
+        "id": "towel",
+        "nombre": "toalla",
+        "etiquetaCLIP": "a bath towel"
       }
     ]
   },
@@ -307,18 +298,19 @@
     "id": 17,
     "nombre": "Ciervo Pálido",
     "imagen": "assets/monsters/17-ciervo-palido.webp",
+    "sonidoAparicion": "assets/audio/appear/17.wav",
+    "sonidoScreamer": "assets/audio/scream/17.wav",
+    "lore": "Una familia taló el bosque donde lo había visto por primera vez. Solo permite pasar a quien repone algo capaz de echar raíces y dar sombra. También acepta el fruto rojo que crujía en las meriendas de los antiguos guardabosques.",
     "debilidades": [
       {
-        "en": "tree",
-        "es": "árbol"
+        "id": "tree",
+        "nombre": "árbol",
+        "etiquetaCLIP": "a tree"
       },
       {
-        "en": "flower",
-        "es": "flor"
-      },
-      {
-        "en": "apple",
-        "es": "manzana"
+        "id": "apple",
+        "nombre": "manzana",
+        "etiquetaCLIP": "an apple"
       }
     ]
   },
@@ -326,18 +318,24 @@
     "id": 18,
     "nombre": "Santo Podrido",
     "imagen": "assets/monsters/18-santo-podrido.webp",
+    "sonidoAparicion": "assets/audio/appear/18.wav",
+    "sonidoScreamer": "assets/audio/scream/18.wav",
+    "lore": "Se llevó a los fieles que dejaron vacía la capilla. Lo detienen el signo de dos trazos perpendiculares del altar, el tañido que convocaba a misa y los versos sagrados guardados entre cubiertas, que su antiguo guardián recitaba al anochecer.",
     "debilidades": [
       {
-        "en": "book",
-        "es": "libro"
+        "id": "cross",
+        "nombre": "cruz",
+        "etiquetaCLIP": "a Christian cross"
       },
       {
-        "en": "bell",
-        "es": "campana"
+        "id": "bell",
+        "nombre": "campana",
+        "etiquetaCLIP": "a bell"
       },
       {
-        "en": "star",
-        "es": "estrella"
+        "id": "book",
+        "nombre": "libro",
+        "etiquetaCLIP": "an open book"
       }
     ]
   },
@@ -345,18 +343,19 @@
     "id": 19,
     "nombre": "El Mordedor",
     "imagen": "assets/monsters/19-el-mordedor.webp",
+    "sonidoAparicion": "assets/audio/appear/19.wav",
+    "sonidoScreamer": "assets/audio/scream/19.wav",
+    "lore": "Se escapó de la perrera la noche en que faltó el alimento. Sus ataques cesan al recibir los restos duros que quedaban después del caldo. También persigue algo redondo que rebota y rueda, olvidando a quien lo lanzó.",
     "debilidades": [
       {
-        "en": "banana",
-        "es": "banana"
+        "id": "bone",
+        "nombre": "hueso",
+        "etiquetaCLIP": "a bone"
       },
       {
-        "en": "apple",
-        "es": "manzana"
-      },
-      {
-        "en": "carrot",
-        "es": "zanahoria"
+        "id": "ball",
+        "nombre": "pelota",
+        "etiquetaCLIP": "a ball"
       }
     ]
   },
@@ -364,18 +363,14 @@
     "id": 20,
     "nombre": "Larva Real",
     "imagen": "assets/monsters/20-larva-real.webp",
+    "sonidoAparicion": "assets/audio/appear/20.wav",
+    "sonidoScreamer": "assets/audio/scream/20.wav",
+    "lore": "Salió del granero cuando comenzó la cosecha. El único trabajador que sobrevivió oyó un trino sobre las vigas; desde entonces, el corredor queda vacío al repetir aquel canto.",
     "debilidades": [
       {
-        "en": "fish",
-        "es": "pez"
-      },
-      {
-        "en": "bird",
-        "es": "pájaro"
-      },
-      {
-        "en": "saw",
-        "es": "sierra"
+        "id": "bird",
+        "nombre": "pájaro",
+        "etiquetaCLIP": "a small bird"
       }
     ]
   },
@@ -383,18 +378,14 @@
     "id": 21,
     "nombre": "Muñeco de Ceniza",
     "imagen": "assets/monsters/21-muneco-de-ceniza.webp",
+    "sonidoAparicion": "assets/audio/appear/21.wav",
+    "sonidoScreamer": "assets/audio/scream/21.wav",
+    "lore": "Despertó después de un incendio y se quedó donde recogían los restos. Solo retrocede ante el recipiente con asa que los vecinos llenaban de agua para apagar las últimas brasas.",
     "debilidades": [
       {
-        "en": "house",
-        "es": "casa"
-      },
-      {
-        "en": "door",
-        "es": "puerta"
-      },
-      {
-        "en": "ladder",
-        "es": "escalera"
+        "id": "bucket",
+        "nombre": "cubo",
+        "etiquetaCLIP": "a bucket with a handle"
       }
     ]
   },
@@ -402,18 +393,219 @@
     "id": 22,
     "nombre": "Voz del Pozo",
     "imagen": "assets/monsters/22-voz-del-pozo.webp",
+    "sonidoAparicion": "assets/audio/appear/22.wav",
+    "sonidoScreamer": "assets/audio/scream/22.wav",
+    "lore": "Hablaba desde el fondo cada noche en que faltaba un vecino. Un viajero obtuvo silencio dejando caer una pieza de cambio. Otro regresó después de que lo izaran con fibras trenzadas, sujetas a la viga del brocal.",
     "debilidades": [
       {
-        "en": "bell",
-        "es": "campana"
+        "id": "coin",
+        "nombre": "moneda",
+        "etiquetaCLIP": "a coin"
       },
       {
-        "en": "heart",
-        "es": "corazón"
+        "id": "rope",
+        "nombre": "soga",
+        "etiquetaCLIP": "a coiled rope"
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "nombre": "Madre Raíz",
+    "imagen": "assets/monsters/23-madre-raiz.webp",
+    "sonidoAparicion": "assets/audio/appear/23.wav",
+    "sonidoScreamer": "assets/audio/scream/23.wav",
+    "lore": "Los leñadores abandonaron el claro después de perder una cuadrilla. Quien volvió recordó golpes secos que partían troncos, ramas amontonadas que crepitaban bajo un resplandor naranja y el chirrido de un corte metálico que avanzaba y retrocedía por la madera.",
+    "debilidades": [
+      {
+        "id": "axe",
+        "nombre": "hacha",
+        "etiquetaCLIP": "an axe"
       },
       {
-        "en": "key",
-        "es": "llave"
+        "id": "fire",
+        "nombre": "fuego",
+        "etiquetaCLIP": "a campfire with flames"
+      },
+      {
+        "id": "saw",
+        "nombre": "sierra",
+        "etiquetaCLIP": "a handsaw"
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "nombre": "Rey Rata",
+    "imagen": "assets/monsters/24-rey-rata.webp",
+    "sonidoAparicion": "assets/audio/appear/24.wav",
+    "sonidoScreamer": "assets/audio/scream/24.wav",
+    "lore": "La plaga empezó en la despensa de un rey que jamás compartía su comida. Le teme al cazador doméstico que ronronea. Su hambre se distrae con una cuña de leche cuajada; quien logró encerrarlo oyó cerrarse un resorte bajo el cebo.",
+    "debilidades": [
+      {
+        "id": "cat",
+        "nombre": "gato",
+        "etiquetaCLIP": "a cat"
+      },
+      {
+        "id": "cheese",
+        "nombre": "queso",
+        "etiquetaCLIP": "a wedge of cheese"
+      },
+      {
+        "id": "mousetrap",
+        "nombre": "trampa",
+        "etiquetaCLIP": "a mousetrap"
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "nombre": "El Desollado",
+    "imagen": "assets/monsters/25-el-desollado.webp",
+    "sonidoAparicion": "assets/audio/appear/25.wav",
+    "sonidoScreamer": "assets/audio/scream/25.wav",
+    "lore": "Escapó del sanatorio después de una cura que nunca terminó. Solo se calma cuando alguien enrolla tela sobre una herida. Evita la lluvia bajo una cubierta portátil que se abre, y abandona el pasillo cuando el mediodía despejado entra por las ventanas.",
+    "debilidades": [
+      {
+        "id": "bandage",
+        "nombre": "venda",
+        "etiquetaCLIP": "a bandage roll"
+      },
+      {
+        "id": "umbrella",
+        "nombre": "paraguas",
+        "etiquetaCLIP": "an umbrella"
+      },
+      {
+        "id": "sun",
+        "nombre": "sol",
+        "etiquetaCLIP": "the sun with rays"
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "nombre": "El Retrato",
+    "imagen": "assets/monsters/26-el-retrato.webp",
+    "sonidoAparicion": "assets/audio/appear/26.wav",
+    "sonidoScreamer": "assets/audio/scream/26.wav",
+    "lore": "El artista murió antes de terminar su encargo. La obra solo obedece las cerdas con las que extendía pigmentos. Una noche retrocedió ante papeles que ardían; otra, al reconocer el lugar de techo inclinado y chimenea donde vivía el pintor.",
+    "debilidades": [
+      {
+        "id": "paintbrush",
+        "nombre": "pincel",
+        "etiquetaCLIP": "a paintbrush"
+      },
+      {
+        "id": "fire",
+        "nombre": "fuego",
+        "etiquetaCLIP": "a campfire with flames"
+      },
+      {
+        "id": "house",
+        "nombre": "casa",
+        "etiquetaCLIP": "a house"
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "nombre": "Boca de Mil Dientes",
+    "imagen": "assets/monsters/27-boca-de-mil-dientes.webp",
+    "sonidoAparicion": "assets/audio/appear/27.wav",
+    "sonidoScreamer": "assets/audio/scream/27.wav",
+    "lore": "Los desaparecidos trabajaban en una confitería que abría antes del amanecer. El último cliente escapó frotando cada pieza de su dentadura con cerdas pequeñas. También cesa al recibir el dulce de cumpleaños que cortaban en porciones o el fruto rojo que cruje al partirlo.",
+    "debilidades": [
+      {
+        "id": "toothbrush",
+        "nombre": "cepillo de dientes",
+        "etiquetaCLIP": "a toothbrush"
+      },
+      {
+        "id": "cake",
+        "nombre": "pastel",
+        "etiquetaCLIP": "a birthday cake"
+      },
+      {
+        "id": "apple",
+        "nombre": "manzana",
+        "etiquetaCLIP": "an apple"
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "nombre": "El Costurero",
+    "imagen": "assets/monsters/28-el-costurero.webp",
+    "sonidoAparicion": "assets/audio/appear/28.wav",
+    "sonidoScreamer": "assets/audio/scream/28.wav",
+    "lore": "Cosía de noche para familias que después negaban conocerlo. El ruido de dos hojas que cortan al cerrarse interrumpió su trabajo. Otra vez perdió sus útiles metálicos atraídos sin contacto; desde entonces evita el ronroneo que precede al juego con ovillos.",
+    "debilidades": [
+      {
+        "id": "scissors",
+        "nombre": "tijeras",
+        "etiquetaCLIP": "a pair of scissors"
+      },
+      {
+        "id": "magnet",
+        "nombre": "imán",
+        "etiquetaCLIP": "a horseshoe magnet"
+      },
+      {
+        "id": "cat",
+        "nombre": "gato",
+        "etiquetaCLIP": "a cat"
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "nombre": "Polilla Funeraria",
+    "imagen": "assets/monsters/29-polilla-funeraria.webp",
+    "sonidoAparicion": "assets/audio/appear/29.wav",
+    "sonidoScreamer": "assets/audio/scream/29.wav",
+    "lore": "Se instaló en la habitación donde velaban a los muertos. Sigue la luz conectada a la pared sobre la mesa. Retrocede cuando las cerdas barren los rincones y se aquieta ante una mecha que consume lentamente un cilindro de cera.",
+    "debilidades": [
+      {
+        "id": "lamp",
+        "nombre": "lámpara",
+        "etiquetaCLIP": "a table lamp"
+      },
+      {
+        "id": "broom",
+        "nombre": "escoba",
+        "etiquetaCLIP": "a broom"
+      },
+      {
+        "id": "candle",
+        "nombre": "vela",
+        "etiquetaCLIP": "a lit candle"
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "nombre": "El Pescador Hundido",
+    "imagen": "assets/monsters/30-el-pescador-hundido.webp",
+    "sonidoAparicion": "assets/audio/appear/30.wav",
+    "sonidoScreamer": "assets/audio/scream/30.wav",
+    "lore": "Su barco desapareció en aguas profundas y volvió sin tripulación. Retrocede ante los cuadrados de hilo que encierran cardúmenes y la curva metálica cebada al final de un sedal. Para regresar a cubierta exige escuchar un graznido sobre las olas.",
+    "debilidades": [
+      {
+        "id": "fishing_net",
+        "nombre": "red",
+        "etiquetaCLIP": "a fishing net"
+      },
+      {
+        "id": "fishing_hook",
+        "nombre": "anzuelo",
+        "etiquetaCLIP": "a fishing hook"
+      },
+      {
+        "id": "seagull",
+        "nombre": "gaviota",
+        "etiquetaCLIP": "a seagull"
       }
     ]
   }

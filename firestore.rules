@@ -8,7 +8,6 @@ service cloud.firestore {
         && request.resource.data.p is int && request.resource.data.p >= 1 && request.resource.data.p <= maximum
         && request.resource.data.t == request.time;
     }
-    // Public reads; immutable, strictly shaped records. Client scores are not trusted proofs.
     match /scores/{id} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['n','p','a','t']) && base(500);

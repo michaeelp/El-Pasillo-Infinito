@@ -39,3 +39,9 @@ App Check es recomendable para reducir abuso. Ni App Check ni estas validaciones
 ## Pruebas
 
 tests/rules.test.cjs carga estas reglas en emuladores y verifica accesos permitidos y rechazados. No usa ni modifica bases de producción. Ampliar las reglas exige repetir las pruebas y no reintroducir permisos en padres.
+
+## Catálogo 1.2.0
+
+Secreto y lastMonster admiten IDs hasta 30. Las etiquetas y las claves de distribution se generan automáticamente con node tools/update_rules.mjs desde monsters.json; no se mantiene una lista manual. node tools/update_rules.mjs --check detecta un catálogo cambiado sin regenerar reglas. Las nuevas reglas prueban el monstruo 30, rechazan el 31 y rechazan etiquetas ajenas al catálogo.
+
+El cliente usa IDs estables para publicar récords y confirma el documento existente antes de reintentar. La inmutabilidad se conserva. La lectura permite registros históricos sin avatar; las nuevas escrituras exigen a y los campos actuales.
