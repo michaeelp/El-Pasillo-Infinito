@@ -9,7 +9,7 @@ export const FIREBASE_CONFIG = {
   appId: "1:274953472552:web:4bec7187bb8407abbf831d",
   measurementId: "G-74BM1JDTLW"
 };
-export const VERSION = '1.0.0';
+export const VERSION = '1.0.1';
 export const GAME = { roundMs: 60000, countMs: 3000, flashMs: 1000, suspenseMs: 3000, winMs: 2600, loseMs: 1400 };
 export const AI = {
   library: 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1',
