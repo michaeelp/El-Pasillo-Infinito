@@ -1,6 +1,6 @@
-import { VERSION } from './config.js?v=1.1.0';
-import { sanitizeName } from './storage.js?v=1.1.0';
-import { shortError } from './net.js?v=1.1.0';
+import { VERSION } from './config.js?v=1.2.0';
+import { sanitizeName } from './storage.js?v=1.2.0';
+import { shortError } from './net.js?v=1.2.0';
 const KEY = 'pasillo-profile-v1';
 export let avatars = [];
 let profile = {nombre:'Jugador', avatar:1};

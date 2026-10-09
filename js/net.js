@@ -1,6 +1,6 @@
-import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.1.0';
-import { firebaseApp, isConfigured, withDeadline } from './sdk.js?v=1.1.0';
-import { sanitizeName } from './storage.js?v=1.1.0';
+import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.2.0';
+import { firebaseApp, isConfigured, withDeadline } from './sdk.js?v=1.2.0';
+import { sanitizeName } from './storage.js?v=1.2.0';
 export const onlineConfigured = () => isConfigured() && !!FIREBASE_CONFIG.databaseURL;
 export const networkError = error => /permission|denied/i.test(error?.message || '') ? 'Acceso rechazado. Revisa las reglas de Firebase.' : /anonymous|operation-not-allowed/i.test(error?.message || '') ? 'Activa la autenticación anónima en Firebase.' : 'No se pudo conectar. Reintenta.';
 export const shortError = error => /^(Espera|Avatar|Ese rol|No se|La sala|La partida|Cooperativo|Faltan|Firebase)/.test(error?.message||'') ? error.message : networkError(error);
@@ -83,7 +83,6 @@ export class Network {
     }
   }
   subscribe() {
-    // Never subscribe to the room root: it contains the private monster node.
     for (const stop of this.stops.splice(0)) stop();
     for (const branch of Object.keys(this.data)) {
       this.stops.push(this.sdk.onValue(this.ref(branch),snap=>{this.data[branch]=snap.val() || (branch==='meta'?null:{});this.emit();},error=>this.fail(error)));
@@ -96,7 +95,6 @@ export class Network {
     await this.update(`jugadores/${this.uid}`, {ausente:false,changed:this.now()});
   }
   async claim(type, id) {
-    // Transactions decide simultaneous avatar, role and seat claims on Firebase.
     const result = await this.transaction(`claims/${type}/${id}`, owner => owner && owner !== this.uid ? undefined : this.uid);
     if (!result.committed) throw new Error(type==='avatars'?'Avatar ocupado. Elige otro en Perfil.':'Ese rol está ocupado.');
   }

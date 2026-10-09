@@ -1,18 +1,19 @@
-import { GAME, TIEMPO_ALERTA, roundDurations } from './config.js?v=1.1.0';
-import { loadMonsters,chooseMonster,labelsFrom,setPortrait,preload } from './monsters.js?v=1.1.0';
-import { Drawing,COLORS } from './draw.js?v=1.1.0';
-import { Book } from './book.js?v=1.1.0';
-import { Atmosphere } from './audio.js?v=1.1.0';
-import { Recognizer,judge } from './ai.js?v=1.1.0';
-import { getOptions,saveOptions,addResult,nameResult,sanitizeName,canPersist } from './storage.js?v=1.1.0';
-import { publishScore } from './firebase.js?v=1.1.0';
-import { $,screen,setupUI,applyOptions,refreshBest,refreshWorld,toast } from './ui.js?v=1.1.0';
-import { background } from './background.js?v=1.1.0';
-import { loadFonts } from './fonts.js?v=1.1.0';
-import { loadProfile,getProfile,playerNode,setupProfile } from './profile.js?v=1.1.0';
-import { Lobby } from './lobby.js?v=1.1.0';
-import { OnlineSession } from './online-game.js?v=1.1.0';
-import { onlineConfigured,networkError } from './net.js?v=1.1.0';
+import { GAME, TIEMPO_ALERTA, roundDurations } from './config.js?v=1.2.0';
+import { loadMonsters,chooseMonster,labelsFrom,setPortrait,preload } from './monsters.js?v=1.2.0';
+import { Drawing,COLORS } from './draw.js?v=1.2.0';
+import { Book } from './book.js?v=1.2.0';
+import { Atmosphere } from './audio.js?v=1.2.0';
+import { Recognizer,judge,topResult } from './ai.js?v=1.2.0';
+import { showDebug } from './debug.js?v=1.2.0';
+import { getOptions,saveOptions,addResult,nameResult,sanitizeName,canPersist } from './storage.js?v=1.2.0';
+import { publishScore } from './firebase.js?v=1.2.0';
+import { $,screen,setupUI,applyOptions,refreshBest,refreshWorld,toast } from './ui.js?v=1.2.0';
+import { background } from './background.js?v=1.2.0';
+import { loadFonts } from './fonts.js?v=1.2.0';
+import { loadProfile,getProfile,playerNode,setupProfile } from './profile.js?v=1.2.0';
+import { Lobby } from './lobby.js?v=1.2.0';
+import { OnlineSession } from './online-game.js?v=1.2.0';
+import { onlineConfigured,networkError } from './net.js?v=1.2.0';
 const audio=new Atmosphere(getOptions());
 let lobby=null,online=null,roundTimes=roundDurations(1),roundNumber=1;
 let state='warning',monsters=[],labels=[],book=null,current=null,score=0,startedAt=0,deadline=0,paused=false,pausedAt=0,lastCount=0,tab='book',resultId=null,saved=false,runToken=0,analysis=null,analysisError='',submittedBlob=null,lastReason='',assetsReady=false;
@@ -31,7 +32,7 @@ function hideAnalysisActions(){$('inference-retry').hidden=true;$('inference-men
 function menu(){online?.stop();runToken++;paused=false;document.body.classList.remove('paused','online');if($('pause-modal').open)$('pause-modal').close();$('game-chat').hidden=true;$('ghost-tools').hidden=true;document.querySelector('.tabs').hidden=false;$('role-view').hidden=true;$('live-view').hidden=true;$('online-board').hidden=true;$('active-role').hidden=true;$('pause').hidden=false;$('online-leave').hidden=true;$('round-label').textContent='PASILLO';audio.resume();hideAnalysisActions();enter('menu','menu');$('menu-profile').replaceChildren(playerNode(getProfile()));refreshBest();refreshWorld();if(!recognizer.ready)recognizer.load().catch(()=>{});}
 function selectTab(next){if(online?.active&&online.data?.meta?.modo==='coop'&&(online.role==='vigia'||online.role==='bibliotecario'&&next!=='book'||online.role==='dibujante'&&next!=='draw'))return;tab=next;$('book-view').hidden=next!=='book';$('draw-view').hidden=next!=='draw';for(const key of ['book','draw']){$(`tab-${key}`).classList.toggle('active',key===next);$(`tab-${key}`).setAttribute('aria-pressed',String(key===next));}drawing.active=null;drawing.enabled=state==='book'&&!paused&&next==='draw';}
 async function boot(){
-  try{monsters=await loadMonsters();labels=labelsFrom(monsters);book=new Book(monsters,audio);await loadProfile();$('menu-profile').replaceChildren(playerNode(getProfile()));setupProfile(menu,()=>{$('menu-profile').replaceChildren(playerNode(getProfile()));});await background.ready;await loadFonts();await preload(monsters);assetsReady=true;$('play').disabled=!recognizer.ready;}
+  try{monsters=await loadMonsters();labels=labelsFrom(monsters);book=new Book(monsters,audio);showDebug([],labels);await loadProfile();$('menu-profile').replaceChildren(playerNode(getProfile()));setupProfile(menu,()=>{$('menu-profile').replaceChildren(playerNode(getProfile()));});await Promise.all([background.ready,loadFonts(),preload(monsters),audio.preload(monsters)]);assetsReady=true;$('play').disabled=!recognizer.ready;}
   catch(error){$('ai-status').textContent=error.message;$('retry-ai').hidden=false;$('retry-ai').onclick=()=>location.reload();}
 }
 $('accept').onclick=async()=>{
@@ -64,7 +65,7 @@ function nextRound(){
   $('count-number').textContent='3';$('count-number').hidden=false;$('monster-face').hidden=true;$('encounter-message').textContent='';hideAnalysisActions();
   setPortrait($('monster-face'),current);enter('count','encounter');audio.effect('count');
 }
-function flash(){enter('flash','encounter');$('count-number').hidden=true;$('encounter-caption').hidden=true;$('monster-face').hidden=false;audio.effect('flash');}
+function flash(){enter('flash','encounter');$('count-number').hidden=true;$('encounter-caption').hidden=true;$('monster-face').hidden=false;audio.monster('appear',current);}
 function beginSearch(){enter('book','workbench');deadline=performance.now()+roundTimes.phaseMs;$('level').textContent=String(score+1).padStart(2,'0');book.go(Math.floor(Math.random()*monsters.length),false);selectTab('book');updateClock(roundTimes.phaseMs);}
 function updateClock(ms,phaseMs=roundTimes.phaseMs){$('timer').textContent=String(Math.max(0,Math.ceil(ms/1000))).padStart(2,'0');$('timer').parentElement.classList.toggle('urgent',ms<=Math.min(TIEMPO_ALERTA*1000,phaseMs/3));}
 async function submit(){
@@ -77,22 +78,22 @@ async function submit(){
 }
 async function analyze(token){
   analysis=null;analysisError='';hideAnalysisActions();$('encounter-message').textContent='';
-  try{const results=await recognizer.classify(submittedBlob,labels.map(w=>w.en));if(token!==runToken||state!=='suspense')return;analysis={results};if(debug){console.table(results.slice(0,5));$('debug-results').textContent=results.slice(0,5).map(r=>`${labels.find(w=>w.en===r.label)?.es||r.label}: ${(r.score*100).toFixed(1)} %`).join('\n');}}
+  try{const results=await recognizer.classify(submittedBlob,labels);if(token!==runToken||state!=='suspense')return;analysis={results};showDebug(results,labels);}
   catch(error){if(token===runToken&&state==='suspense')analysisError=error.message;}
 }
 function resolveAnalysis(){
   if(analysisError){$('encounter-message').textContent=analysisError;$('inference-retry').hidden=false;$('inference-menu').hidden=false;return;}
   if(!analysis){$('encounter-message').textContent='Analizando…';return;}
   if(analysis.empty){lose('No dibujaste nada.');return;}
-  const results=analysis.results,top=results[0];
+  const results=analysis.results,top=topResult(results);
   if(!top){analysisError='La IA no devolvió un resultado. Puedes reintentar.';return;}
-  const word=labels.find(w=>w.en===top.label)?.es||top.label,recognized=`La IA reconoció: ${word} (${Math.round(top.score*100)} %).`;
+  const word=labels.find(w=>w.id===top.label)?.nombre||top.label,recognized=`La IA reconoció: ${word} (${Math.round(top.score*100)} %).`;
   if(judge(results,current)){score++;enter('win','encounter');audio.effect('flee');$('encounter-message').textContent=recognized;}
   else lose(`${recognized} Debilidad incorrecta.`);
 }
-function lose(reason){lastReason=reason;hideAnalysisActions();setPortrait($('monster-face'),current);$('monster-face').hidden=false;$('count-number').hidden=true;$('encounter-caption').hidden=true;$('encounter-message').textContent='';enter('lose','encounter');audio.effect('scream');}
+function lose(reason){lastReason=reason;hideAnalysisActions();setPortrait($('monster-face'),current);$('monster-face').hidden=false;$('count-number').hidden=true;$('encounter-caption').hidden=true;$('encounter-message').textContent='';enter('lose','encounter');audio.monster('scream',current);}
 function gameOver(){
-  enter('over','over');$('death-reason').textContent=lastReason;$('final-score').textContent=score;$('save-status').textContent='';$('save-score').disabled=false;$('player-name').value=getProfile().nombre;$('death-player').replaceChildren(playerNode(getProfile(),false));saved=false;resultId=addResult(score,getProfile().avatar,getProfile().nombre);refreshBest();
+  enter('over','over');$('death-reason').textContent=lastReason;$('final-score').textContent=score;$('save-status').textContent=score?'':'Sin pasillos superados.';$('save-score').disabled=score===0;$('save-score').textContent='GUARDAR RÉCORD';$('player-name').readOnly=false;$('player-name').value=getProfile().nombre;$('death-player').replaceChildren(playerNode(getProfile(),false));saved=false;resultId=addResult(score,getProfile().avatar,getProfile().nombre);refreshBest();
   if(!canPersist())$('save-status').textContent='Guardado solo en esta sesión.';
   $('restart').focus({preventScroll:true});
 }
@@ -105,7 +106,7 @@ function togglePause(){
 $('pause').onclick=togglePause;$('resume').onclick=togglePause;$('quit').onclick=menu;$('pause-modal').addEventListener('cancel',e=>{e.preventDefault();togglePause();});
 $('tab-book').onclick=()=>selectTab('book');$('tab-draw').onclick=()=>selectTab('draw');$('show').onclick=submit;$('restart').onclick=()=>{score=0;current=null;runToken++;nextRound();};$('back-menu').onclick=menu;
 $('inference-retry').onclick=()=>{if(submittedBlob)analyze(runToken);};$('inference-menu').onclick=menu;
-$('save-form').onsubmit=async e=>{e.preventDefault();if(saved)return;saved=true;const name=sanitizeName($('player-name').value),local=nameResult(resultId,name);$('player-name').value=name;$('save-score').disabled=true;$('save-status').textContent='Enviando…';const token=runToken,result=await publishScore(name,score,getProfile().avatar);if(token!==runToken||state!=='over')return;$('save-status').textContent=result==='global'?'Récord guardado.':result==='pending'?'Guardado local. Envío no confirmado.':local?'Guardado local.':'Guardado en esta sesión.';};
+$('save-form').onsubmit=async e=>{e.preventDefault();if(saved||$('save-score').disabled||score<1)return;const name=sanitizeName($('player-name').value);nameResult(resultId,name);$('player-name').value=name;$('player-name').readOnly=true;$('save-score').disabled=true;$('save-status').textContent='Enviando…';const token=runToken,result=await publishScore(name,score,getProfile().avatar,'solo',[],resultId);if(token!==runToken||state!=='over')return;saved=result.status==='global';$('save-status').textContent=saved?result.message:`Guardado local. ${result.message}`;$('save-score').disabled=saved;$('save-score').textContent=saved?'GUARDADO':'REINTENTAR ENVÍO';if(saved)refreshWorld();};
 for(const[colorName,hex]of COLORS){const b=document.createElement('button');b.style.setProperty('--swatch',hex);b.setAttribute('aria-label',colorName);b.title=colorName;b.classList.toggle('selected',hex===drawing.color);b.setAttribute('aria-pressed',String(hex===drawing.color));b.onclick=()=>{drawing.color=hex;for(const other of $('palette').children){other.classList.toggle('selected',other===b);other.setAttribute('aria-pressed',String(other===b));}};$('palette').append(b);}
 for(const b of document.querySelectorAll('[data-tool]'))b.onclick=()=>{drawing.tool=b.dataset.tool;for(const other of document.querySelectorAll('[data-tool]')){other.classList.toggle('selected',other===b);other.setAttribute('aria-pressed',String(other===b));}};
 $('brush-size').oninput=()=>{drawing.size=Number($('brush-size').value);$('size-value').textContent=drawing.size;};$('undo').onclick=()=>drawing.undo();$('clear').onclick=()=>{if(drawing.enabled)drawing.clear();};

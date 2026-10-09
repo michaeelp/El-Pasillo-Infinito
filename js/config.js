@@ -8,7 +8,10 @@ export const FIREBASE_CONFIG = {
   appId: '1:274953472552:web:4bec7187bb8407abbf831d',
   measurementId: 'G-74BM1JDTLW'
 };
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
+export const MONSTER_COUNT = 30;
+export const PRECISION_REF = 0.6;
+export const confusables = ['flashlight','sun','fire','candle','lamp'];
 export const ASSET_TIMEOUT_MS = 8000;
 export const TIEMPO_FASE = 60;
 export const TIEMPO_ALERTA = 20;
@@ -33,8 +36,8 @@ export const SCORING = { base: 100, precision: 400, speed: 300, exponent: 1.5, s
 export const AI = {
   library: 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1',
   model: 'Xenova/clip-vit-base-patch32',
-  template: 'a rough hand-drawn doodle of a {}.',
+  template: 'a rough hand-drawn doodle of {}.',
   timeoutMs: 25000, loadTimeoutMs: 600000,
-  acceptSecond: false, secondMargin: 0.04, minimumInk: 45
+  minimumInk: 45
 };
 export const DEFAULT_OPTIONS = { music: 0.35, effects: 0.6, flash: 'normal', screamer: 'normal', muted: false };

@@ -1,11 +1,11 @@
-import { AI } from './config.js?v=1.1.0';
+import { AI } from './config.js?v=1.2.0';
 export class Recognizer {
   constructor(onStatus){this.onStatus=onStatus;this.worker=null;this.ready=false;this.pending=null;this.loading=null;this.sequence=0;this.backend='';}
   load(){
     if(this.ready)return Promise.resolve();if(this.loading)return this.loading;
     this.worker?.terminate();this.ready=false;const files=new Map();let peak=0;
     this.loading=new Promise((resolve,reject)=>{
-      const worker=new Worker(new URL('./ai-worker.js?v=1.1.0',import.meta.url),{type:'module'});this.worker=worker;
+      const worker=new Worker(new URL('./ai-worker.js?v=1.2.0',import.meta.url),{type:'module'});this.worker=worker;
       const fail=()=>{clearTimeout(this.loadTimer);this.ready=false;this.loading=null;worker.terminate();this.onStatus({state:'error'});reject(new Error('La IA no pudo cargarse. Comprueba tu conexión y vuelve a intentarlo.'));};
       this.loadTimer=setTimeout(fail,AI.loadTimeoutMs);
       worker.onerror=()=>{if(!this.ready)fail();else{this.pending?.reject(new Error('El reconocimiento se interrumpió.'));this.reset();}};
@@ -22,14 +22,11 @@ export class Recognizer {
     if(!this.ready)await this.load();if(this.pending)throw new Error('Ya hay un dibujo en análisis.');
     return new Promise((resolve,reject)=>{
       const id=++this.sequence,timer=setTimeout(()=>{this.reset();reject(new Error('La IA tardó más de 25 segundos. Reintenta el análisis; tu partida está a salvo.'));},AI.timeoutMs);
-      this.pending={id,resolve:r=>{clearTimeout(timer);resolve(r);},reject:e=>{clearTimeout(timer);reject(e);}};
-      this.worker.postMessage({type:'classify',id,blob,labels});
+      const candidates=new Map(labels.map(word=>[word.etiquetaCLIP,word.id]));
+      this.pending={id,resolve:r=>{clearTimeout(timer);resolve(r.map(item=>({...item,label:candidates.get(item.label)||item.label})).sort((a,b)=>b.score-a.score));},reject:e=>{clearTimeout(timer);reject(e);}};
+      this.worker.postMessage({type:'classify',id,blob,labels:labels.map(word=>word.etiquetaCLIP)});
     });
   }
 }
-export function judge(results,monster){
-  const accepted=new Set(monster.debilidades.map(w=>w.en));
-  if(!results.length)return false;
-  if(accepted.has(results[0].label))return true;
-  return AI.acceptSecond&&results[1]&&results[0].score-results[1].score<=AI.secondMargin&&accepted.has(results[1].label);
-}
+export const topResult = results => results.reduce((best,item)=>Number.isFinite(item.score)&&(!best||item.score>best.score)?item:best,null);
+export function judge(results,monster){const top=topResult(results);return !!top&&!!monster?.debilidades.some(word=>word.id===top.label);}

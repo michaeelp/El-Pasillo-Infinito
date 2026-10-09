@@ -1,16 +1,17 @@
-import { SCORING, ONLINE, tiempoFase } from './config.js?v=1.1.0';
+import { SCORING, ONLINE, PRECISION_REF, tiempoFase } from './config.js?v=1.2.0';
+import { judge, topResult } from './ai.js?v=1.2.0';
 const clamp = value => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+export const precisionBonus = probability => SCORING.precision * clamp(probability / PRECISION_REF);
 export function scoreRound({ok, precision = 0, ms = 0}, round, previousStreak = 0) {
   if (!ok) return {points:0, streak:0};
   const duration = tiempoFase(round) * 1000;
   const speed = SCORING.speed * Math.pow(1 - clamp(ms / duration), SCORING.exponent);
   const streak = previousStreak + 1;
   const multiplier = Math.min(SCORING.streakMax, 1 + SCORING.streakStep * streak);
-  return {points:Math.round((SCORING.base + SCORING.precision * clamp(precision) + speed) * multiplier), streak};
+  return {points:Math.round((SCORING.base + precisionBonus(precision) + speed) * multiplier), streak};
 }
 export function precisionFor(results, monster) {
-  const accepted = new Set(monster.debilidades.map(word => word.en));
-  return clamp(results.filter(item => accepted.has(item.label)).reduce((sum, item) => sum + item.score, 0));
+  return judge(results,monster) ? clamp(topResult(results).score) : 0;
 }
 export function raceBoard(players, previous = {}, results = {}, round = 1) {
   return Object.fromEntries(Object.entries(players).map(([uid, player]) => {

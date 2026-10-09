@@ -1,9 +1,9 @@
-import { VERSION } from './config.js?v=1.1.0';
+import { VERSION, MONSTER_COUNT } from './config.js?v=1.2.0';
 export async function loadMonsters() {
   const response = await fetch(`monsters.json?v=${VERSION}`);
   if (!response.ok) throw new Error('No se pudo abrir el bestiario. Recarga la página.');
   const monsters = await response.json();
-  if (!Array.isArray(monsters) || monsters.length < 22) throw new Error('El bestiario está incompleto.');
+  if (!Array.isArray(monsters) || monsters.length !== MONSTER_COUNT || new Set(monsters.map(m=>m.id)).size !== MONSTER_COUNT || monsters.some(m=>!Number.isInteger(m.id)||m.id<1||m.id>MONSTER_COUNT||typeof m.lore!=='string'||!Array.isArray(m.debilidades)||m.debilidades.length<1||m.debilidades.length>3||m.debilidades.some(w=>!w.id||!w.nombre||!w.etiquetaCLIP))) throw new Error('El bestiario está incompleto. Recarga.');
   return monsters;
 }
 export function chooseMonster(monsters, previous) {
@@ -11,7 +11,7 @@ export function chooseMonster(monsters, previous) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 export function labelsFrom(monsters) {
-  return [...new Map(monsters.flatMap(m => m.debilidades).map(w => [w.en, w])).values()];
+  return [...new Map(monsters.flatMap(m => m.debilidades).map(w => [w.id, w])).values()];
 }
 export function fallbackFace(monster) {
   const c = document.createElement('canvas'); c.width = c.height = 512;
@@ -25,13 +25,14 @@ export function fallbackFace(monster) {
   return c.toDataURL();
 }
 export function setPortrait(img, monster) {
+  if (!monster) {img.removeAttribute('src');img.alt='';return;}
   img.alt = monster.nombre;
-  img.onerror = () => { img.onerror = null; img.src = fallbackFace(monster); };
+  let backup=false;
+  img.onerror = () => {if(!backup&&monster.id>22){backup=true;img.src=`${monster.imagen.replace(/\.webp$/,'.png')}?v=${VERSION}`;}else{img.onerror=null;img.src=fallbackFace(monster);}};
   img.src = `${monster.imagen}?v=${VERSION}`;
 }
 export async function preload(monsters) {
   await Promise.all(monsters.map(m => new Promise(resolve => {
-    const i = new Image(); i.onload = i.onerror = resolve; i.src = `${m.imagen}?v=${VERSION}`;
-    setTimeout(resolve,8000);
+    const i = new Image(),timer=setTimeout(resolve,8000);i.onload=()=>{clearTimeout(timer);resolve();};setPortrait(i,m);
   })));
 }

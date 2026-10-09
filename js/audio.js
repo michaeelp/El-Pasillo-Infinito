@@ -1,6 +1,6 @@
-import { TIEMPO_FASE, TIEMPO_ALERTA } from './config.js?v=1.1.0';
+import { TIEMPO_FASE, TIEMPO_ALERTA, VERSION, ASSET_TIMEOUT_MS } from './config.js?v=1.2.0';
 export class Atmosphere {
-  constructor(options){this.options=options;this.ctx=null;this.beatAt=0;this.ambientAt=0;this.stepAt=0;}
+  constructor(options){this.options=options;this.ctx=null;this.beatAt=0;this.ambientAt=0;this.stepAt=0;this.cues=new Map();}
   async start(){
     if(this.ctx){try{await this.ctx.resume();}catch{}return;}
     try{
@@ -11,11 +11,31 @@ export class Atmosphere {
       this.noise=c.createBuffer(1,c.sampleRate*3,c.sampleRate);const d=this.noise.getChannelData(0);let last=0;for(let i=0;i<d.length;i++){last=(last+(Math.random()*2-1)*.05)/1.02;d[i]=last*3.5;}
       for(const [f,gain]of [[41,.1],[61.7,.035],[82.3,.025]]){const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.value=gain;o.connect(g);g.connect(this.music);o.start();const lfo=c.createOscillator(),mod=c.createGain();lfo.frequency.value=.07;mod.gain.value=gain*.4;lfo.connect(mod);mod.connect(g.gain);lfo.start();}
       this.setOptions(this.options);await c.resume();
+      await Promise.all([...this.cues.values()].map(entry=>this.decodeCue(entry)));
     }catch{this.ctx=null;}
   }
   setOptions(options){this.options=options;if(!this.ctx)return;const t=this.ctx.currentTime;this.music.gain.setTargetAtTime(options.music,t,.08);this.fx.gain.setTargetAtTime(options.effects,t,.08);this.master.gain.setTargetAtTime(options.muted?0:.7,t,.08);}
   async suspend(){try{await this.ctx?.suspend();}catch{}}
   async resume(){try{await this.ctx?.resume();}catch{}}
+  async preload(monsters){await Promise.all(monsters.flatMap(monster=>[monster.sonidoAparicion,monster.sonidoScreamer]).map(path=>this.loadCue(path).promise));await Promise.all([...this.cues.values()].map(entry=>this.decodeCue(entry)));}
+  loadCue(path){
+    if(this.cues.has(path))return this.cues.get(path);
+    const entry={buffer:null,bytes:null},controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ASSET_TIMEOUT_MS);
+    entry.promise=fetch(new URL(`../${path}?v=${VERSION}`,import.meta.url),{signal:controller.signal}).then(response=>{if(!response.ok)throw new Error('Audio no disponible.');return response.arrayBuffer();}).then(bytes=>{entry.bytes=bytes;return bytes;}).catch(()=>null).finally(()=>clearTimeout(timer));
+    this.cues.set(path,entry);return entry;
+  }
+  async decodeCue(entry){
+    if(entry.buffer||!this.ctx)return entry.buffer;
+    if(!entry.decoding)entry.decoding=entry.promise.then(bytes=>bytes?this.ctx.decodeAudioData(bytes.slice(0)):null).then(buffer=>entry.buffer=buffer).catch(()=>null);
+    return entry.decoding;
+  }
+  monster(kind,monster){
+    const path=kind==='appear'?monster?.sonidoAparicion:monster?.sonidoScreamer,entry=this.cues.get(path);
+    if(!entry?.buffer){this.effect(kind==='appear'?'flash':'scream');return;}
+    if(!this.ctx||this.ctx.state!=='running')return;
+    const source=this.ctx.createBufferSource(),gain=this.ctx.createGain();source.buffer=entry.buffer;gain.gain.value=kind==='scream'&&this.options.screamer==='attenuated'?.18:.7;
+    source.connect(gain);gain.connect(this.fx);source.start();source.onended=()=>{source.disconnect();gain.disconnect();};
+  }
   tone(f,duration=.2,volume=.2,type='sine',delay=0,end=f,bus=this.fx){
     if(!this.ctx||this.ctx.state!=='running')return;const c=this.ctx,t=c.currentTime+delay,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(Math.max(1,end),t+duration);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0001,volume),t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(bus);o.start(t);o.stop(t+duration+.03);o.onended=()=>{o.disconnect();g.disconnect();};
   }

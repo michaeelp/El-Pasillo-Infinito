@@ -1,4 +1,4 @@
-import { setPortrait } from './monsters.js?v=1.1.0';
+import { setPortrait } from './monsters.js?v=1.2.0';
 export class Book {
   constructor(monsters,audio){this.monsters=monsters;this.audio=audio;this.index=0;this.turnTimer=0;
     this.root=document.getElementById('book');this.marks=document.getElementById('bookmarks');
@@ -10,7 +10,7 @@ export class Book {
   }
   render(){const m=this.monsters[this.index];setPortrait(document.getElementById('book-portrait'),m);
     for(const[id,value]of Object.entries({'book-name':m.nombre,'page-number':String(this.index+1),'page-count':`${this.index+1} / ${this.monsters.length}`}))document.getElementById(id).textContent=value;
-    const ul=document.getElementById('weaknesses');ul.replaceChildren();m.debilidades.forEach(w=>{const li=document.createElement('li');li.textContent=w.es;ul.append(li);});
+    document.getElementById('book-lore').textContent=m.lore;
     [...this.marks.children].forEach((b,i)=>b.setAttribute('aria-current',String(i===this.index)));
   }
 }

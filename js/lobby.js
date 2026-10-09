@@ -1,8 +1,8 @@
-import { ONLINE } from './config.js?v=1.1.0';
-import { Network, networkError, shortError } from './net.js?v=1.1.0';
-import { getProfile, playerNode } from './profile.js?v=1.1.0';
-import { assignRoles, ROLES } from './coop.js?v=1.1.0';
-import { screen, toast } from './ui.js?v=1.1.0';
+import { ONLINE } from './config.js?v=1.2.0';
+import { Network, networkError, shortError } from './net.js?v=1.2.0';
+import { getProfile, playerNode } from './profile.js?v=1.2.0';
+import { assignRoles, ROLES } from './coop.js?v=1.2.0';
+import { screen, toast } from './ui.js?v=1.2.0';
 const $ = id => document.getElementById(id);
 export function messages(value) {return Object.values(value || {}).flatMap(branch=>Object.values(branch || {})).filter(item=>item&&typeof item==='object'&&typeof item.texto==='string').sort((a,b)=>a.t-b.t).slice(-30);}
 export function createChat(root, net, quick = false) {

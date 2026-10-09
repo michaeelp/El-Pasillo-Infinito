@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { duracionFlash, tiempoFase, roundDurations, GAME } from '../js/config.js';
-import { scoreRound, raceBoard, standings, precisionFor } from '../js/scoring.js';
+import { scoreRound, raceBoard, standings, precisionFor, precisionBonus } from '../js/scoring.js';
 import { monsterSequence, roundPhase } from '../js/race.js';
 import { rotateRoles } from '../js/coop.js';
 test('dificultad y mínimos',()=>{
@@ -14,13 +14,16 @@ test('puntos, racha, fallos y tiempo del pasillo actual',()=>{
   assert.deepEqual(scoreRound({ok:false,precision:1,ms:0},1,10),{points:0,streak:0});
   assert.equal(scoreRound({ok:true,precision:1,ms:0},1).points,880);
   assert.equal(scoreRound({ok:true,precision:1,ms:0},1,8).points,1200);
-  assert.equal(scoreRound({ok:true,precision:.5,ms:30000},1).points,447);
-  assert.equal(scoreRound({ok:true,precision:.5,ms:29000},2).points,447);
-  assert.equal(scoreRound({ok:true,precision:.5,ms:60000},1).points,330);
-  assert.equal(scoreRound({ok:true,precision:.5,ms:25000},20).points,330);
+  assert.equal(scoreRound({ok:true,precision:.3,ms:30000},1).points,447);
+  assert.equal(scoreRound({ok:true,precision:.3,ms:29000},2).points,447);
+  assert.equal(scoreRound({ok:true,precision:.3,ms:60000},1).points,330);
+  assert.equal(scoreRound({ok:true,precision:.3,ms:25000},20).points,330);
   const board=raceBoard({a:{},b:{ausente:true}}, {}, {a:{ok:true,precision:1,ms:0},b:{ok:true,precision:1,ms:0}},1);assert.equal(board.a.points,880);assert.equal(board.b.points,0);assert.equal(board.b.lives,2);
   assert.equal(standings({a:{points:100,precision:.2,attempts:1},b:{points:100,precision:.8,attempts:1}})[0][0],'b');
-  assert.equal(precisionFor([{label:'sun',score:.6},{label:'candle',score:.2}],{debilidades:[{en:'sun'},{en:'candle'}]}),.8);
+  assert.equal(precisionFor([{label:'sun',score:.6},{label:'candle',score:.2}],{debilidades:[{id:'sun'},{id:'candle'}]}),.6);
+  assert.equal(precisionBonus(.3),200);assert.equal(precisionBonus(.6),400);assert.equal(precisionBonus(1),400);assert.equal(precisionBonus(NaN),0);
+  const points=[1,2,3].map(count=>scoreRound({ok:true,precision:precisionFor([{label:'sun',score:.5},{label:'candle',score:.2},{label:'lamp',score:.1}],{debilidades:[{id:'sun'},{id:'candle'},{id:'lamp'}].slice(0,count)}),ms:1000},1).points);
+  assert.equal(new Set(points).size,1);
 });
 test('secuencia común y reloj sincronizado',()=>{
   const monsters=[{id:1},{id:2},{id:3}];const seq=monsterSequence(123,monsters,100);assert.deepEqual(seq,monsterSequence(123,monsters,100));for(let i=1;i<seq.length;i++)assert.notEqual(seq[i].id,seq[i-1].id);

@@ -1,4 +1,4 @@
-import { AI } from './config.js?v=1.1.0';
+import { AI } from './config.js?v=1.2.0';
 export class Drawing {
   constructor(canvas, sound) {
     this.canvas=canvas;this.ctx=canvas.getContext('2d',{willReadFrequently:true});
@@ -26,7 +26,6 @@ export class Drawing {
   }
   undo() { if(!this.enabled)return;this.active=null;const image=this.history.pop();if(image)this.ix.putImageData(image,0,0);this.render(); }
   clear(record=true) { this.active=null;if(record)this.snapshot();else this.history=[];this.ix.clearRect(0,0,512,512);this.render(); }
-  // La búsqueda usa el color visible; los píxeles pintados permanecen en el canvas transparente.
   fill(sx,sy,tolerance=36) {
     const image=this.ctx.getImageData(0,0,512,512),d=image.data,ink=this.ix.getImageData(0,0,512,512),k=ink.data;
     const origin=(sy*512+sx)*4,target=[d[origin],d[origin+1],d[origin+2]],rgb=this.color.match(/[a-f\d]{2}/gi).map(h=>parseInt(h,16));

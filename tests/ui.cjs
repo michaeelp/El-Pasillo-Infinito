@@ -9,7 +9,7 @@ const bundle=esbuild.buildSync({stdin:{contents:"export * as app from 'firebase/
 const server=http.createServer((req,res)=>{
   if(req.url==='/qa/firebase.js'){res.setHeader('Content-Type','text/javascript');res.end(bundle);return;}
   const file=path.join(root,decodeURIComponent(new URL(req.url,'http://localhost').pathname==='/'?'index.html':new URL(req.url,'http://localhost').pathname));
-  try{res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.webp':'image/webp','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.statusCode=404;res.end('404');}
+  try{res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png','.wav':'audio/wav','.woff2':'font/woff2'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.statusCode=404;res.end('404');}
 });
 async function sdkRoutes(context){
  await context.route('https://www.gstatic.com/firebasejs/10.14.1/*',route=>{
@@ -17,7 +17,7 @@ async function sdkRoutes(context){
   if(name==='firebase-app.js')body="import {app} from '/qa/firebase.js';export const getApps=app.getApps;export const initializeApp=config=>app.initializeApp({...config,projectId:'demo-pasillo',databaseURL:'https://demo-pasillo.firebaseio.com'});";
   if(name==='firebase-auth.js')body="import {auth} from '/qa/firebase.js';export const signInAnonymously=auth.signInAnonymously;export const getAuth=app=>{const a=auth.getAuth(app);if(!a.__test){auth.connectAuthEmulator(a,'http://127.0.0.1:9099',{disableWarnings:true});a.__test=true;}return a;};";
   if(name==='firebase-database.js')body="import {db} from '/qa/firebase.js';export const {ref,get,set,update,onValue,onDisconnect,runTransaction,push,serverTimestamp}=db;export const getDatabase=app=>{const d=db.getDatabase(app);if(!d.__test){db.connectDatabaseEmulator(d,'127.0.0.1',9000);d.__test=true;}return d;};";
-  if(name==='firebase-firestore.js')body="import {store} from '/qa/firebase.js';export const {collection,query,orderBy,limit,getDocs,addDoc,serverTimestamp}=store;export const getFirestore=app=>{const f=store.getFirestore(app);if(!f.__test){store.connectFirestoreEmulator(f,'127.0.0.1',8081);f.__test=true;}return f;};";
+  if(name==='firebase-firestore.js')body="import {store} from '/qa/firebase.js';export const {collection,query,orderBy,limit,getDocs,getDocsFromServer,getDocFromServer,doc,setDoc,addDoc,serverTimestamp}=store;export const getFirestore=app=>{const f=store.getFirestore(app);if(!f.__test){store.connectFirestoreEmulator(f,'127.0.0.1',8081);f.__test=true;}return f;};";
   return route.fulfill({contentType:'text/javascript',headers:{'Access-Control-Allow-Origin':'*'},body:body.replaceAll("from '/qa/","from 'http://127.0.0.1:8002/qa/")});
  });
 }
@@ -25,7 +25,7 @@ async function setup(context,name='Ana',avatar=1,deterministic=true){
  await sdkRoutes(context);
  await context.addInitScript(({name,avatar,deterministic})=>{
   if(!localStorage.getItem('pasillo-profile-v1'))localStorage.setItem('pasillo-profile-v1',JSON.stringify({nombre:name,avatar}));if(deterministic)Math.random=()=>0;
-  window.Worker=class{postMessage(data){setTimeout(()=>this.onmessage?.({data:data.type==='load'?{type:'ready',backend:'test-double'}:{type:'result',id:data.id,results:[{label:window.__label||'sun',score:.9},{label:'apple',score:.1}]}}),30);}terminate(){}};
+  window.Worker=class{postMessage(data){setTimeout(()=>{const first=window.__label||'a digging shovel';if(data.labels)window.__candidateLabels=data.labels;this.onmessage?.({data:data.type==='load'?{type:'ready',backend:'test-double'}:{type:'result',id:data.id,results:[{label:first,score:.9},...data.labels.filter(label=>label!==first).slice(0,4).map((label,i)=>({label,score:[.04,.03,.02,.01][i]}))]}});},30);}terminate(){}};
  },{name,avatar,deterministic});
  const page=await context.newPage();page.on('pageerror',error=>{errors.push(error.message);console.error(error.stack);});
  await page.goto('http://127.0.0.1:8002',{waitUntil:'domcontentloaded'});await page.click('#accept');await page.waitForFunction(()=>!document.getElementById('play').disabled);

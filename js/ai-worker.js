@@ -1,4 +1,4 @@
-import { AI } from './config.js?v=1.1.0';
+import { AI } from './config.js?v=1.2.0';
 let classifier=null,loading=null,backend='wasm';
 async function load(){
   if(classifier)return;

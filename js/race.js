@@ -1,4 +1,4 @@
-import { GAME, roundDurations } from './config.js?v=1.1.0';
+import { GAME, roundDurations } from './config.js?v=1.2.0';
 export function monsterSequence(seed, monsters, count) {
   let value = seed >>> 0, last = -1;
   return Array.from({length:count}, () => {

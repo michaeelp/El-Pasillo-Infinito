@@ -1,4 +1,4 @@
-import { DEFAULT_OPTIONS } from './config.js?v=1.1.0';
+import { DEFAULT_OPTIONS } from './config.js?v=1.2.0';
 const KEY = 'pasillo-infinito-v1';
 let data = { options: { ...DEFAULT_OPTIONS }, scores: [] }, persistent = true;
 try {
