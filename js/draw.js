@@ -1,4 +1,4 @@
-import { AI } from './config.js?v=1.0.0';
+import { AI } from './config.js?v=1.1.0';
 export class Drawing {
   constructor(canvas, sound) {
     this.canvas=canvas;this.ctx=canvas.getContext('2d',{willReadFrequently:true});
@@ -11,7 +11,7 @@ export class Drawing {
   }
   point(e) { const r=this.canvas.getBoundingClientRect();return{x:Math.max(0,Math.min(511,(e.clientX-r.left)*512/r.width)),y:Math.max(0,Math.min(511,(e.clientY-r.top)*512/r.height))}; }
   snapshot() { this.history.push(this.ix.getImageData(0,0,512,512));if(this.history.length>25)this.history.shift(); }
-  render() { this.ctx.fillStyle='#fff';this.ctx.fillRect(0,0,512,512);this.ctx.drawImage(this.ink,0,0); }
+  render() { this.ctx.fillStyle='#fff';this.ctx.fillRect(0,0,512,512);this.ctx.drawImage(this.ink,0,0);this.onChange?.(); }
   down(e) {
     if(!this.enabled||this.active!==null||(e.pointerType==='mouse'&&e.button!==0))return;
     e.preventDefault();this.snapshot();const p=this.point(e);

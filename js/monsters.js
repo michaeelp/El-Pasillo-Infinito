@@ -1,4 +1,4 @@
-import { VERSION } from './config.js?v=1.0.0';
+import { VERSION } from './config.js?v=1.1.0';
 export async function loadMonsters() {
   const response = await fetch(`monsters.json?v=${VERSION}`);
   if (!response.ok) throw new Error('No se pudo abrir el bestiario. Recarga la página.');

@@ -1,4 +1,4 @@
-import { DEFAULT_OPTIONS } from './config.js?v=1.0.0';
+import { DEFAULT_OPTIONS } from './config.js?v=1.1.0';
 const KEY = 'pasillo-infinito-v1';
 let data = { options: { ...DEFAULT_OPTIONS }, scores: [] }, persistent = true;
 try {
@@ -16,7 +16,7 @@ export function getOptions() { return {...data.options}; }
 export function saveOptions(options) { data.options = {...data.options,...options}; return persist(); }
 export function localScores() { return data.scores.map(s=>({...s})); }
 export function bestScore() { return Math.max(0,...data.scores.map(s=>s.p)); }
-export function addResult(score) { const s={id:crypto.randomUUID(),n:'Sin nombre',p:score,t:Date.now()};data.scores.unshift(s);data.scores.length=Math.min(50,data.scores.length);persist();return s.id; }
+export function addResult(score,avatar=1,name='Sin nombre') { const s={id:crypto.randomUUID(),n:sanitizeName(name),a:avatar,p:score,t:Date.now()};data.scores.unshift(s);data.scores.length=Math.min(50,data.scores.length);persist();return s.id; }
 export function nameResult(id,name) { const s=data.scores.find(s=>s.id===id);if(s)s.n=sanitizeName(name);return persist(); }
 export function clearScores() { data.scores=[];return persist(); }
 export function canPersist() { return persistent; }

@@ -1,3 +1,4 @@
+import { TIEMPO_FASE, TIEMPO_ALERTA } from './config.js?v=1.1.0';
 export class Atmosphere {
   constructor(options){this.options=options;this.ctx=null;this.beatAt=0;this.ambientAt=0;this.stepAt=0;}
   async start(){
@@ -35,9 +36,9 @@ export class Atmosphere {
       case 'scream':{const v=this.options.screamer==='attenuated'?.13:.65;this.hiss(1.1,v,1600);this.tone(360,1.1,v*.45,'sawtooth',0,1700);this.tone(530,.95,v*.25,'sawtooth',.02,330);break;}
     }
   }
-  tick(now,state,remaining,level){
+  tick(now,state,remaining,level,phaseMs=TIEMPO_FASE*1000){
     if(!this.ctx||this.ctx.state!=='running')return;
-    if(['count','book','suspense'].includes(state)&&now>this.beatAt){this.effect('heart');this.beatAt=now+(state==='suspense'?420:remaining<=20000?400+remaining/50:1000);}
+    if(['count','book','suspense'].includes(state)&&now>this.beatAt){this.effect('heart');this.beatAt=now+(state==='suspense'?420:remaining<=Math.min(TIEMPO_ALERTA*1000,phaseMs/3)?400+remaining/50:1000);}
     if(state==='count'&&now>this.stepAt){this.effect('step');this.stepAt=now+570;}
     if(now>this.ambientAt){const choices=[()=>this.hiss(2,.12,800,0,this.music),()=>this.tone(270,2,.03,'sine',0,265,this.music),()=>this.tone(70,.8,.06,'triangle',0,32,this.music)];choices[Math.floor(Math.random()*choices.length)]();this.ambientAt=now+Math.max(2300,9000-level*180)+Math.random()*4000;}
   }
