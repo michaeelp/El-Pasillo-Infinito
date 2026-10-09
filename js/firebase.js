@@ -1,4 +1,4 @@
-import { FIREBASE_CONFIG } from './config.js?v=1.0.0';
+import { FIREBASE_CONFIG } from './config.js?v=1.0.1';
 import { sanitizeName } from './storage.js?v=1.0.0';
 let connection=null;
 export const isConfigured=()=>!!(FIREBASE_CONFIG.apiKey&&FIREBASE_CONFIG.projectId&&FIREBASE_CONFIG.appId);
