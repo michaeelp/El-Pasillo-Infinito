@@ -1,6 +1,13 @@
 // CONFIGURACIÓN FIREBASE: pega aquí la configuración pública de tu aplicación web.
-export const FIREBASE_CONFIG = {
-  apiKey: '', authDomain: '', projectId: '', storageBucket: '', messagingSenderId: '', appId: ''
+export const firebaseConfig = {
+  apiKey: "AIzaSyA9O_zUIjbZ_imUlvQkabXtnFZgVJSHn_U",
+  authDomain: "el-pasillo-infinito.firebaseapp.com",
+  databaseURL: "https://el-pasillo-infinito-default-rtdb.firebaseio.com",
+  projectId: "el-pasillo-infinito",
+  storageBucket: "el-pasillo-infinito.firebasestorage.app",
+  messagingSenderId: "274953472552",
+  appId: "1:274953472552:web:4bec7187bb8407abbf831d",
+  measurementId: "G-74BM1JDTLW"
 };
 export const VERSION = '1.0.0';
 export const GAME = { roundMs: 60000, countMs: 3000, flashMs: 1000, suspenseMs: 3000, winMs: 2600, loseMs: 1400 };
