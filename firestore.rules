@@ -1,18 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /scores/{scoreId} {
-      allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['n', 'p', 't'])
-        && request.resource.data.keys().hasOnly(['n', 'p', 't'])
-        && request.resource.data.n is string
-        && request.resource.data.n.size() >= 1
-        && request.resource.data.n.size() <= 14
-        && request.resource.data.p is int
-        && request.resource.data.p >= 1
-        && request.resource.data.p <= 500
-        && request.resource.data.t is timestamp
+    function name(n) { return n is string && n.size() >= 1 && n.size() <= 14 && !n.matches('.*[<>].*'); }
+    function avatar(a) { return a is int && a >= 1 && a <= 8; }
+    function base(maximum) {
+      return name(request.resource.data.n) && avatar(request.resource.data.a)
+        && request.resource.data.p is int && request.resource.data.p >= 1 && request.resource.data.p <= maximum
         && request.resource.data.t == request.time;
+    }
+    // Public reads; immutable, strictly shaped records. Client scores are not trusted proofs.
+    match /scores/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['n','p','a','t']) && base(500);
+      allow update, delete: if false;
+    }
+    match /scores_carrera/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['n','p','a','t']) && base(50000);
+      allow update, delete: if false;
+    }
+    function member(p) { return p is map && p.keys().hasOnly(['n','a']) && name(p.n) && avatar(p.a); }
+    match /scores_coop/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['n','p','a','t','equipo']) && base(500)
+        && request.resource.data.equipo is list && request.resource.data.equipo.size() == 3
+        && member(request.resource.data.equipo[0]) && member(request.resource.data.equipo[1])
+        && member(request.resource.data.equipo[2]);
       allow update, delete: if false;
     }
   }
