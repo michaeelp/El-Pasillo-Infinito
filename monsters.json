@@ -608,5 +608,165 @@
         "etiquetaCLIP": "a seagull"
       }
     ]
+  },
+  {
+    "id": 31,
+    "nombre": "El Último Huésped",
+    "imagen": "assets/monsters/31-el-ultimo-huesped.webp",
+    "sonidoAparicion": "assets/audio/appear/31.wav",
+    "sonidoScreamer": "assets/audio/scream/31.wav",
+    "lore": "Alquiló una habitación por una noche y nunca entregó el metal que giraba en su cerradura. Cada madrugada prepara la despedida; solo retrocede cuando oye el equipaje cerrarse antes de salir.",
+    "debilidades": [
+      {
+        "id": "key",
+        "nombre": "llave",
+        "etiquetaCLIP": "a metal door key"
+      },
+      {
+        "id": "suitcase",
+        "nombre": "maleta",
+        "etiquetaCLIP": "a travel suitcase with a handle"
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "nombre": "El Abrelatas",
+    "imagen": "assets/monsters/32-el-abrelatas.webp",
+    "sonidoAparicion": "assets/audio/appear/32.wav",
+    "sonidoScreamer": "assets/audio/scream/32.wav",
+    "lore": "Quedó encerrado en el almacén durante el invierno. Detesta el giro que aprieta las piezas flojas y todavía busca las raciones selladas que alimentaron a los últimos obreros; al oír abrir una, abandona la persecución.",
+    "debilidades": [
+      {
+        "id": "screwdriver",
+        "nombre": "destornillador",
+        "etiquetaCLIP": "a screwdriver with a handle"
+      },
+      {
+        "id": "tin_can",
+        "nombre": "lata",
+        "etiquetaCLIP": "a sealed cylindrical food tin can"
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "nombre": "El Ombliguero",
+    "imagen": "assets/monsters/33-el-ombliguero.webp",
+    "sonidoAparicion": "assets/audio/appear/33.wav",
+    "sonidoScreamer": "assets/audio/scream/33.wav",
+    "lore": "Vivía entre la ropa abandonada del hospicio. Nunca soportó que un pequeño disco atravesara su ojal; las prendas de mangas cortas que cubrían el vientre de los internos lo mantenían encerrado hasta la siguiente colada.",
+    "debilidades": [
+      {
+        "id": "button",
+        "nombre": "botón",
+        "etiquetaCLIP": "a round clothing button with four holes"
+      },
+      {
+        "id": "tshirt",
+        "nombre": "camiseta",
+        "etiquetaCLIP": "a short sleeved t-shirt"
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "nombre": "El Enjambre",
+    "imagen": "assets/monsters/34-el-enjambre.webp",
+    "sonidoAparicion": "assets/audio/appear/34.wav",
+    "sonidoScreamer": "assets/audio/scream/34.wav",
+    "lore": "Colonizó el jardín del convento siguiendo el néctar. Los monjes aprendieron a retenerlo bajo un recipiente transparente con tapa; cuando escapaba, un aparato de aspas sobre la mesa dispersaba su avance sin despertar a los demás.",
+    "debilidades": [
+      {
+        "id": "flower",
+        "nombre": "flor",
+        "etiquetaCLIP": "a flower"
+      },
+      {
+        "id": "glass_jar",
+        "nombre": "tarro de cristal",
+        "etiquetaCLIP": "a glass storage jar with a screw lid"
+      },
+      {
+        "id": "desk_fan",
+        "nombre": "ventilador",
+        "etiquetaCLIP": "a desk fan with three blades"
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "nombre": "El Ahogado Seco",
+    "imagen": "assets/monsters/35-el-ahogado-seco.webp",
+    "sonidoAparicion": "assets/audio/appear/35.wav",
+    "sonidoScreamer": "assets/audio/scream/35.wav",
+    "lore": "Cruzó el desierto buscando un cauce que ya no existía. Solo interrumpe su marcha ante una bebida transparente servida en un recipiente abierto; también sigue a los habitantes que nadan bajo la superficie, aunque nunca consigue alcanzarlos.",
+    "debilidades": [
+      {
+        "id": "glass_water",
+        "nombre": "vaso de agua",
+        "etiquetaCLIP": "an open drinking glass filled with water"
+      },
+      {
+        "id": "fish",
+        "nombre": "pez",
+        "etiquetaCLIP": "a fish with fins and a tail"
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "nombre": "El Parásito",
+    "imagen": "assets/monsters/36-el-parasito.webp",
+    "sonidoAparicion": "assets/audio/appear/36.wav",
+    "sonidoScreamer": "assets/audio/scream/36.wav",
+    "lore": "Se instaló en los enfermos del sanatorio y resistió todos los ungüentos. El médico logró desalojarlo al empujar un émbolo, atravesando la piel con una punta hueca.",
+    "debilidades": [
+      {
+        "id": "syringe",
+        "nombre": "jeringa",
+        "etiquetaCLIP": "a medical syringe with a needle and plunger"
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "nombre": "La Máscara de Carne",
+    "imagen": "assets/monsters/37-la-mascara-de-carne.webp",
+    "sonidoAparicion": "assets/audio/appear/37.wav",
+    "sonidoScreamer": "assets/audio/scream/37.wav",
+    "lore": "Suplantaba a los actores antes de cada función. Perdía el papel cuando alguien corregía su visión con dos cristales, comprobaba quién lo imitaba al otro lado del azogue o trazaba rojo alrededor de la sonrisa antes de salir a escena.",
+    "debilidades": [
+      {
+        "id": "eyeglasses",
+        "nombre": "gafas",
+        "etiquetaCLIP": "a pair of clear prescription eyeglasses"
+      },
+      {
+        "id": "mirror",
+        "nombre": "espejo",
+        "etiquetaCLIP": "a mirror"
+      },
+      {
+        "id": "lipstick",
+        "nombre": "pintalabios",
+        "etiquetaCLIP": "an open lipstick tube with a red tip"
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "nombre": "El Invertido",
+    "imagen": "assets/monsters/38-el-invertido.webp",
+    "sonidoAparicion": "assets/audio/appear/38.wav",
+    "sonidoScreamer": "assets/audio/scream/38.wav",
+    "lore": "Repitió la misma guardia hasta olvidar el amanecer. Solo puede comenzar otra vez cuando alguien gira dos cámaras unidas y deja caer los granos por su cuello estrecho.",
+    "debilidades": [
+      {
+        "id": "hourglass",
+        "nombre": "reloj de arena",
+        "etiquetaCLIP": "an hourglass with sand flowing between two bulbs"
+      }
+    ]
   }
 ]

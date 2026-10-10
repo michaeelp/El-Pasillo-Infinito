@@ -8,7 +8,7 @@ export const FIREBASE_CONFIG = {
   appId: '1:274953472552:web:4bec7187bb8407abbf831d',
   measurementId: 'G-74BM1JDTLW'
 };
-export const VERSION = '1.3.1';
+export const VERSION = '1.4.0';
 export const AVATAR_COUNT = 12;
 // Tiempos en segundos; Fácil conserva siempre sus valores.
 export const DIFFICULTIES = {
@@ -21,13 +21,14 @@ export const DEFAULT_DIFFICULTY = 'normal';
 export const REEMPLAZAR_SOLO_SI_MEJOR = true;
 // Clave pública de reCAPTCHA v3; vacío mantiene App Check sin activar.
 export const APP_CHECK = {siteKey:''};
-// npm run generate:rules copia estos límites a las reglas y las funciones.
+// npm run generate:rules copia estos límites a las reglas de Realtime Database.
 export const USERNAMES = {min:3, max:14, reservados:['admin','administrador','firebase','moderador','sistema','invitado'], ofensivos:['puta','puto','mierda','fuck','nazi']};
 export const SOCIAL = {amigosMax:100, pendientesMax:50, solicitudesHora:10, invitacionMs:120000};
 export const XP = {solo:10, precision:5, coop:5, puntosCarrera:50, puestos:[50,30,15], base:80, exponente:1.35, nivelMax:99, maxPartida:600};
-export const MONSTER_COUNT = 30;
 export const PRECISION_REF = 0.6;
-export const confusables = ['flashlight','sun','fire','candle','lamp'];
+export const confusables = ['flashlight','sun','fire','candle','lamp','eyeglasses','sunglasses','glass_water','coffee_cup','glass_jar'];
+export const ECONOMY = {solo:3, coop:2, puntosCarrera:100, puestos:[30,20,10], logro:20, nivel:50, maxPartida:1000};
+export const COSMETIC_PRICES = {comun:100, raro:250, epico:600, legendario:1500};
 export const ASSET_TIMEOUT_MS = 8000;
 export const TIEMPO_FASE = 60;
 export const TIEMPO_ALERTA = 20;

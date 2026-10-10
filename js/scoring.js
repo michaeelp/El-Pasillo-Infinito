@@ -1,5 +1,5 @@
-import { SCORING, PRECISION_REF, roundDurations } from './config.js?v=1.3.1';
-import { winningResult,difficulty } from './difficulty.js?v=1.3.1';
+import { SCORING, PRECISION_REF, roundDurations } from './config.js?v=1.4.0';
+import { winningResult,difficulty } from './difficulty.js?v=1.4.0';
 const clamp = value => Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 export const precisionBonus = probability => SCORING.precision * clamp(probability / PRECISION_REF);
 export function scoreRound({ok, precision = 0, ms = 0}, round, previousStreak = 0, dificultad='normal') {

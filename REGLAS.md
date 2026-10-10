@@ -1,15 +1,28 @@
-# Reglas y datos de Spark 1.3.1
+# Reglas y datos de Spark 1.4.0
 
-`database.rules.json` contiene **todas** las reglas e índices de la base activa. `database.rules.commented.jsonc` tiene el mismo contenido con comentarios. Se regeneran con `npm run generate:rules` desde `tools/update_rules.mjs` y `tools/account_rules.mjs`. El SDK usa Auth modular v10 y RTDB; no llama a Firestore ni a Functions.
+`database.rules.json` contiene **todas** las reglas e índices de la base activa. `database.rules.commented.jsonc` tiene el mismo contenido con comentarios. Se regeneran con `npm run generate:rules` desde `tools/update_rules.mjs` y `tools/account_rules.mjs` y `tools/expansion_rules.mjs`. El SDK usa Auth modular v10 y RTDB; no llama a Firestore ni a Functions.
 
 ## Identidad y progreso
 
 - La raíz deniega lectura/escritura por defecto. Una cuenta debe estar autenticada y no ser anónima; las escrituras de juego además requieren un perfil y ningún marcador de borrado.
-- `users/{uid}`: lectura para cuentas, escritura propia. Datos públicos sin correo; campos desconocidos rechazados. El nombre, nombre en minúsculas, código y fecha son inmutables.
+- `users/{uid}`: lectura propia o según privacidad todos/amigos; nombre, avatar, nivel y equipado accesibles a cuentas para las listas; escritura propia. Datos públicos sin correo; campos desconocidos rechazados. El nombre, nombre en minúsculas, código y fecha son inmutables.
 - `usernames/{nombreLower}` y `friendcodes/{codigo}`: no pueden crearse sueltos ni reasignarse. `newData.parent()` exige las reservas y el perfil en el mismo estado futuro. Una colisión rechaza todo el commit.
 - Registro inicial con XP cero, nivel 1 y estadísticas vacías. Avatar 1–12, código de seis caracteres, nombre validado y filtro generado desde configuración.
 - `partidas/{uid}/{id}`: privado, inmutable, máximo 600 XP, fecha de servidor y modos/dificultades permitidos. Debe existir el mismo ID en el progreso futuro y coincidir el incremento de XP.
 - El nivel debe corresponder exactamente a la curva de XP. No se permite bajar XP ni reutilizar un recibo.
+
+## Economía, catálogo y ajustes
+
+- Catálogo público de solo lectura; lo carga una herramienta firebase-admin local. Los clientes nunca pueden escribir precios, rarezas ni requisitos.
+- Saldo inicial cero; entero no negativo. Solo cambia con un movimiento nuevo de fecha de servidor, ligado al mismo saldo futuro y a ultimaOperacion.
+- Recibo de recompensa completo: fórmula de modo/dificultad, floor de la base, logros/niveles nuevos, semilla no personalizada, máximo 1000. Movimiento partida-ID + recibo + perfil/progreso en la misma actualización. Un recibo existente no puede reutilizarse.
+- Compra: precio exacto, objeto no poseído, inventario true y saldo/movimiento coincidentes. Desbloqueo: coste cero y requisito de nivel/logro existente. Movimiento inmutable y propio. No se puede quitar inventario para comprar de nuevo.
+- Equipado tiene marco/titulo/fondo; cada ID debe existir, ser del tipo correcto y estar en inventario. Vacío desequipa.
+- El bestiario usa IDs de monsters.json y los logros se validan por criterios; los logros obtenidos no se borran/reordenan, evitando bonos repetidos. Se conserva compatibilidad con recibos antiguos sin moneda.
+- Ajustes: esquema completo, rangos/tipos/enums permitidos, siete atajos de una letra sin duplicados; campos adicionales rechazados. Preferencias: solicitudes, estadoVisible, perfil todos/amigos e invitaciones.
+- Eliminación requiere quitar también el registro de movimientos. El marcador propio concede únicamente la limpieza necesaria y bloquea nuevas partidas/compras.
+
+Las pruebas adversarias reproducibles están en tests/expansion5-rules.cjs; ECONOMIA.md detalla fórmulas y límites.
 
 ## Social
 
@@ -18,8 +31,8 @@
 - Rechazar, cancelar y retirar amistad actualizan ambos extremos, con la acción y el actor comprobados.
 - `socialCounts/{uid}` limita a 100 amigos y 50 solicitudes. No se puede poner a cero ni incrementar libremente: cada cambio está ligado a un único vínculo y a su contraparte en el mismo commit. Las escrituras concurrentes se rechazan si usan un contador obsoleto; reintentar relee el estado.
 - `socialLimits/{uid}/{slot}` tiene diez ranuras. Una ranura solo puede reutilizarse al cumplir una hora, tiene fecha `now` y destino ligado a la nueva solicitud. No se puede borrarla para reiniciar la tasa. Cancelar solicitudes no recupera ranuras.
-- `presencia/{uid}`: escritura propia con perfil activo, lectura propia o de amigo confirmado; sala y tiempo validados. `onDisconnect` se cancela al cerrar sesión/borrar cuenta.
-- `invitaciones/{dest}/{id}`: emisor miembro de un lobby activo y amistad mutua; nombre real, modo/dificultad de la sala y máximo dos minutos. Solo el destino lee su bandeja. `enviadas/{uid}/{id}` se valida junto a la invitación y permite limpiar los dos extremos.
+- `presencia/{uid}`: escritura propia con perfil activo, lectura propia o de amigo confirmado si el estado está visible; sala y tiempo validados. `onDisconnect` se cancela al cerrar sesión/borrar cuenta.
+- `invitaciones/{dest}/{id}`: emisor miembro de un lobby activo y amistad mutua; nombre real, modo/dificultad de la sala preferencia de invitaciones activa y máximo dos minutos. Solo el destino lee su bandeja. `enviadas/{uid}/{id}` se valida junto a la invitación y permite limpiar los dos extremos.
 
 ## Récords
 
@@ -37,7 +50,7 @@ Se mantienen anfitrión, claims exclusivos, nombre del perfil, roles, secreto po
 
 `caducidad/{codigo}` expone únicamente código y fecha, con índice de valor. Al conectarse, el cliente revisa hasta ocho entradas. La eliminación de una sala se permite únicamente si expiró, o si la cuenta que se elimina es participante. No se concede lectura global de chats/dibujos para hacer mantenimiento.
 
-`accountCleanup/{uid}` es privado. Solo su dueño puede crearlo, con su nombre/código actuales. Bloquea nuevas escrituras de juego. La limpieza elimina ambos extremos sociales y corrige contadores; después borra perfil, reservas y recibos juntos. Por último libera el marcador y elimina Auth, con un registro local de reintento. Auth y RTDB no pueden borrarse en una transacción común; el navegador debe completar o reintentar la operación.
+`accountCleanup/{uid}` es privado. Solo su dueño puede crearlo, con su nombre/código actuales. Bloquea nuevas escrituras de juego. La limpieza elimina ambos extremos sociales y corrige contadores; después borra perfil, reservas, recibos y movimientos juntos. Por último libera el marcador y elimina Auth, con un registro local de reintento. Auth y RTDB no pueden borrarse en una transacción común; el navegador debe completar o reintentar la operación.
 
 `deletedAccounts/{uid}` conserva solo el UID con valor true, privado e inmutable. Impide que un token anterior a la eliminación, todavía válido, vuelva a crear un perfil. No conserva nombre, correo ni estadísticas.
 

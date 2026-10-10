@@ -1,0 +1,35 @@
+{
+  "version": "1.4.0",
+  "fechaUTC": "2026-10-10T05:03:40.092099+00:00",
+  "aprobadas": {
+    "unitarias": 24,
+    "lore": 38,
+    "monstruos": 38,
+    "etiquetas": 70,
+    "paresDebilidades": 2660,
+    "cosmeticos": 28,
+    "partidasSeguidasConFondos": 3,
+    "scripts": [
+      "npm test",
+      "tests/account-rules.cjs",
+      "tests/accounts-ui.cjs",
+      "tests/spark-ui.cjs",
+      "tests/expansion5-rules.cjs",
+      "tests/expansion5-ui.cjs",
+      "tests/expansion5-extra.cjs"
+    ]
+  },
+  "informes": [
+    "PRUEBAS-RESULTADOS.json",
+    "PRUEBAS-AMPLIACION5-REGLAS.json",
+    "PRUEBAS-AMPLIACION5-UI.json",
+    "PRUEBAS-AMPLIACION5-EXTRAS.json"
+  ],
+  "entorno": "Authentication y Realtime Database emulados; SDK real. CLIP controlado en navegador.",
+  "pendienteManual": [
+    "Reconocimiento con dibujos reales en CLIP y distintos dispositivos",
+    "Percepción de sonidos y vibración en móvil físico",
+    "Entrega de correo y despliegue del proyecto real"
+  ],
+  "desplegadoEnProduccion": false
+}

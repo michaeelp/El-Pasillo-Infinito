@@ -1,0 +1,14 @@
+{
+  "version": "1.4.0",
+  "report": [
+    "Seis categorías, controles/RESTABLECER, aplicación visual, ajustes locales y F5; Cuenta invitado solo acceso/registro.",
+    "Índice 38, escritorio 8/móvil 4 columnas, flechas/Enter/Esc, clic derecho/pulsación larga, reinicio por pasillo y configuración desde pausa.",
+    "Laboratorio invitado: lienzo compartido, vacío, top 5 español/barras/miniaturas, auto 1 s, objetivo ✓/✗ y 70 etiquetas debug; sin progreso.",
+    "Cuenta: identidad de solo lectura/correo oculto, operaciones solo Configuración > Cuenta y sincronización de ajustes entre dispositivos.",
+    "Recompensa concurrente una sola vez, custom 0; tienda/saldo/compra repetida; marco/título en menú, lobby y ranking; fondo propio y de otro perfil persistente.",
+    "Privacidad de perfil/estado/invitaciones; contraseña actual, confirmación por nombre y eliminación con movimientos/récord."
+  ],
+  "pageErrors": [],
+  "forbiddenServices": [],
+  "CLIP": "Doble controlado; calidad de inferencia real pendiente de prueba manual."
+}

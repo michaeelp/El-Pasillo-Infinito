@@ -1,45 +1,62 @@
-# Pruebas y checklist 1.3.1 · Spark
+# Pruebas y checklist · 1.4.0
 
-Ejecutar `npm test`, `npm run test:rules` y `npm run test:expansion`. La web usa el SDK real contra emuladores **Auth/Realtime Database**; no se monta ningún servidor callable. CLIP devuelve etiquetas controladas en estas pruebas, y la biblioteca/modelo real se mantiene en el juego. El informe de navegador está en `PRUEBAS-RESULTADOS.json`.
+`npm test` comprueba catálogo, datos y fórmulas. `npm run test:rules`, `npm run test:expansion`, `npm run test:spark` y `npm run test:ampliacion5` usan proyectos **demo-pasillo** y emuladores locales de Authentication/Realtime Database. Ninguna prueba escribe en tu proyecto real. El SDK Firebase es real; únicamente la inferencia CLIP se sustituye por resultados controlados.
 
-## Cobertura automática
+## Catálogo y fórmulas
 
-- [x] 30 fichas, asignación exacta y 56 objetos derivados del JSON; 1.680 pares de acierto/rechazo.
-- [x] Lore con longitudes, nombres, plurales y sinónimos conocidos; ausencia de campos de apariencia.
-- [x] 22 retratos y ocho avatares originales intactos por SHA-256; nuevos WebP/PNG y 60 WAV distintos sin saturación.
-- [x] 64 semillas × 300 encuentros, bolsa completa y frontera sin repetición.
-- [x] Cuatro dificultades, tiempos/minimos, cuenta sincronizada, umbrales IA y rapidez/precisión.
-- [x] Curva de XP hasta 99, límite 600, semillas sin XP y mejores/estadísticas/logros.
-- [x] Equipo canónico igual para las seis permutaciones.
-- [x] Migración: UID/XP/fechas/recibos conservados, sin correo, conflictos rechazados, social coherente y equipos fusionados.
-- [x] Reglas con SDK real: alta atómica, colisión por mayúsculas y dos altas concurrentes; sin reservas sueltas.
-- [x] Nombre fijo, avatar 1–12, datos propios, sin invitado/anónimo ni correo añadido al perfil.
-- [x] XP/recibo/nivel, recompensa repetida rechazada, récord único/mejor y sin borrado arbitrario.
-- [x] Social: no fabricar amigos ni aceptar la solicitud propia; aceptar/rechazar/cancelar/eliminar con ambos extremos.
-- [x] Límites 100 amigos/50 pendientes y diez envíos por hora, incluso cancelados; contadores y tasa no reiniciables.
-- [x] Presencia entre amigos, invitación mutua, nombre real, lectura propia y limpieza del índice de invitación.
-- [x] Cooperativo: clave/miembros/dificultad/sala/partida, semilla personalizada y puntuación falsa rechazadas.
-- [x] Borrado autorizado por marcador propio, revocación de escrituras, amigos/contadores, equipos/récords, perfil y reservas, sin permitir recreación con un token anterior.
+- [x] 38 fichas, 70 objetos unidos desde monsters.json y 2660 pares de aceptación/rechazo con la regla top 1.
+- [x] Los ocho nuevos aceptan cada debilidad asignada; la dificultad Fácil conserva la regla top 2 de la ampliación 4.
+- [x] Lore: rangos de palabras, nombres, plurales, acentos y sinónimos conocidos; sin campos de apariencia. La revisión humana de la justicia de las pistas complementa el script.
+- [x] 22 retratos y ocho avatares originales intactos por SHA-256; variantes de los cuatro avatares adicionales conservadas.
+- [x] Retratos nuevos 1024×1024 WebP/PNG; 76 WAV diferentes, PCM16 mono y sin saturación; ambience.wav incluido.
+- [x] 8 marcos, 12 títulos y 8 fondos: precios/requisitos/dimensiones. Moneda en 64/128/256; centros y esquinas transparentes de los ocho marcos comprobados.
+- [x] 64 semillas × 300 encuentros: bolsa completa, ciclos derivados del catálogo y frontera sin repetición.
+- [x] Cuatro dificultades: fase/flash/mínimos, cuenta sincronizada, umbrales IA y rapidez/precisión por pasillo.
+- [x] XP hasta nivel 99, máximo 600; almas por modo/dificultad, floor, bonificaciones y máximo 1000; custom 0.
+- [x] Ajustes normalizados, siete atajos diferentes, confusables presentes en la unión y catálogos coherentes.
+- [x] Migración pura y equipos canónicos: conserva UID/progreso/fechas; rechaza conflictos y deduplica equipos.
 
-La suite de navegador recorre tres partidas seguidas como invitado con fondos en cada estado y regreso al menú; herramientas de lienzo en 390×844, opacidad sin acumulación, 35 pasos, recorte y PNG opaco en color; F5, redimensionado, visibilidad, imagen fallida y tipografías locales. Prueba cuentas y sesión persistente, avatar 12, XP, top 50 más puesto 56, dificultades, Amigos, enlaces, invitaciones, Carrera y Cooperativo. Mantiene un trazo de 600 ms durante los refrescos de roles y verifica acierto/rotación/derrota/récord único. Comprueba cambio de contraseña, eliminación de datos/Auth y ausencia de solicitudes a Functions/Firestore.
+## Reglas con SDK real
 
-`npm run test:spark` verifica además XP/recibos y máximos concurrentes, limpieza de salas caducadas y eliminación interrumpida/reanudada.
+- [x] Alta atómica, nombre fijo, colisiones/concurrencia, reservas ligadas, avatar/rangos y ausencia de correo en RTDB.
+- [x] XP/nivel/recibo y récord único/mejor. Social mutuo, límites 100/50 y diez envíos por hora.
+- [x] Recibo + saldo + movimiento atómicos; idempotencia, fórmulas de los tres modos, bonificaciones y tope.
+- [x] Rechazar saldo inflado, compra sin saldo, precio falso, movimiento/recibo ausente, custom, bonificación falsa y >1000.
+- [x] Rechazar compra duplicada, inventario extra/suelto, borrado de objeto y alteración/borrado de movimiento.
+- [x] Dos compras concurrentes con saldo para una: exactamente una aceptada. Equipar exige propiedad y tipo correcto; desbloqueo exige nivel/logro.
+- [x] Conservar logros obtenidos para impedir repetir su bonificación. Bestiario derivado de los IDs, incluido el 38.
+- [x] Ajustes completos y tipos/rangos/enums; atajos repetidos/campos extra/escrituras ajenas rechazados.
+- [x] Perfil para amigos: extraños no leen perfil completo, pero sí identidad para listas. Estado oculto incluso a amigos.
+- [x] Invitaciones según privacidad, presencia privada, equipo canónico y semilla personalizada rechazada.
+- [x] Limpieza solo de sala vencida; borrado por marcador propio y barrera de token anterior.
 
-## Antes de publicar en tu Firebase real
+## Interfaz de ampliación 5
 
-- [ ] Activar Email/Contraseña y política de contraseña de ocho caracteres.
-- [ ] Autorizar tu dominio de GitHub Pages; revisar plantillas de correos.
-- [ ] Si hay progreso anterior, ejecutar vista previa/migración **antes** de publicar la web nueva.
-- [ ] Publicar `database.rules.json` en Realtime Database, con la URL correcta del mismo proyecto.
-- [ ] Sustituir web por v1.3.1, quitar carpetas antiguas functions/cleanup y recargar con Ctrl+F5.
-- [ ] Dos cuentas y dos dispositivos: nombre repetido, acceso, sesión tras F5, perfil y avatar.
-- [ ] Invitado solo/local; cuenta con semilla personalizada sin XP/global.
-- [ ] Amistad por @nombre/link; aceptar/rechazar/cancelar/eliminar, recepción desactivada e invitación de dos minutos.
-- [ ] Carrera y Cooperativo desde redes distintas; dificultad compartida, roles, sincronización y reconexión.
-- [ ] Dibujos reales con CLIP en CPU/WASM/WebGPU; top 5 debug de confusables y umbrales.
-- [ ] Comprobar ranking tras recargar y desde otra cuenta; récord inferior conserva el mayor.
-- [ ] Restablecimiento por correo real, contraseña nueva y verificación de las plantillas.
-- [ ] Eliminar cuenta y reintentar una operación interrumpida desde el mismo navegador.
-- [ ] Observar cuotas de Spark y, si lo activas, métricas/exigencia de App Check.
+- [x] Seis categorías, RESTABLECER, aplicación visual, guardado local/F5 y sincronización real entre dos sesiones de la misma cuenta.
+- [x] Invitado: Cuenta solo login/registro. Identidad de solo lectura/correo oculto. Cierre/cambio/borrado solo dentro de Configuración > Cuenta.
+- [x] Índice 38, ocho columnas escritorio/cuatro móvil, flechas/Enter/Esc, clic derecho y pulsación larga; descartados limpios al cambiar de pasillo.
+- [x] Configuración desde pausa conserva la pausa al volver; pincel/herramienta/dificultad/atajos iniciales.
+- [x] Laboratorio: vacío, top 5 español/barras/miniaturas, auto 1 s, objetivo ✓/✗, 70 etiquetas debug. Sin perfil/XP/almas/recibos/récords del invitado.
+- [x] Recompensa concurrente de la misma partida una sola vez; custom 0. Compra/saldo/compra repetida desde interfaz.
+- [x] Marco/título en menú, lobby y ranking; fondo en perfil propio y de otro jugador, persistente tras visibilidad/resize.
+- [x] Privacidad de perfil/estado/invitaciones, contraseña actual, nombre de borrado exacto y limpieza de movimientos/récord.
+- [x] Herramienta de catálogo real: vista previa sin escribir y carga Admin de 28 objetos en RTDB emulado, sin cambiar usuarios.
+- [x] Cinco buses/ganancias independientes, ambiente descargado después del inicio, subtítulos e integración de vibración.
+- [x] COPIAR RESULTADOS: JSON de 70 candidatas; salida del laboratorio por otra ruta devuelve el lienzo a la partida. Cosméticos refrescados al reabrir ranking; PNG de respaldo cuando falla WebP; tienda móvil sin desbordamiento.
+- [x] Tipografías locales y mínimo 16 px en pantallas comprobadas; móvil sin desbordamiento horizontal. Cero errores de JavaScript y cero peticiones a Functions/Firestore.
 
-Las pruebas automáticas no escriben en tu Firebase real. La inferencia CLIP real, entrega de correo, despliegue y redes/dispositivos reales requieren las comprobaciones manuales anteriores. La CLI de migración se probó con Auth/Firestore/RTDB emulados: vista previa sin escrituras, copia completa, repetición idempotente y origen/Auth intactos. `npm run test:migration` reproduce esa comprobación. No acredita los datos de tu proyecto concreto.
+Tres partidas seguidas con fondos en cada estado, regreso al menú, F5/resize/visibilidad/fallo de imagen; Carrera y Cooperativo con tres roles, trazo largo, rotación y récord único: aprobados. XP/recibos concurrentes, sala vencida y borrado interrumpido/reanudado con Auth: aprobados. La regresión de tres partidas y online se registra en PRUEBAS-RESULTADOS.json. Las pruebas económicas y de interfaz tienen informes separados PRUEBAS-AMPLIACION5-REGLAS.json, PRUEBAS-AMPLIACION5-UI.json y PRUEBAS-AMPLIACION5-EXTRAS.json. Solo se marcan como aprobados los recorridos confirmados por esos informes.
+
+## Antes de publicar en el proyecto real
+
+- [ ] Email/Contraseña, política mínima ocho caracteres y dominio autorizado de GitHub Pages.
+- [ ] Si hay progreso anterior en Firestore, vista previa/migración antes de publicar. Datos RTDB 1.3.1 funcionan sin reiniciar el progreso.
+- [ ] Publicar **database.rules.json completo** y cargar una vez el catálogo con la herramienta Admin local del README.
+- [ ] Sustituir web por v1.4.0, quitar carpetas antiguas functions/cleanup y recargar con Ctrl+F5.
+- [ ] Dos dispositivos/redes reales: ajustes, amigos, Carrera/Cooperativo, roles/sincronización/reconexión y cosméticos en chat/revelado/podio.
+- [ ] Dibujos reales en CLIP, CPU/WASM/WebGPU, incluyendo confusables luz/llama/gafas/recipientes. Afinar umbrales usando laboratorio/debug.
+- [ ] Oír los 76 efectos y ambience.wav; probar cinco buses, silencio al perder foco y vibración en un móvil físico.
+- [ ] Restablecimiento/verificación por correo real y plantillas de Authentication.
+- [ ] Observar cuotas de Spark y, si se usa, métricas/exigencia de App Check.
+
+Las pruebas automáticas validan lógica, datos, operaciones y recorridos; no acreditan la calidad del reconocimiento real, percepción acústica, entrega de correo ni el despliegue del proyecto de producción.

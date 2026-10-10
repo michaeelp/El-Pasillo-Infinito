@@ -1,7 +1,7 @@
 // Las doce categorías viven en RTDB, con índice de puntuación y reglas de identidad.
-import {REEMPLAZAR_SOLO_SI_MEJOR,DIFFICULTIES} from './config.js?v=1.3.1';
-import {currentUser} from './auth.js?v=1.3.1';
-import {databaseService,readData,withDeadline} from './sdk.js?v=1.3.1';
+import {REEMPLAZAR_SOLO_SI_MEJOR,DIFFICULTIES} from './config.js?v=1.4.0';
+import {currentUser} from './auth.js?v=1.4.0';
+import {databaseService,readData,withDeadline} from './sdk.js?v=1.4.0';
 export const collectionName=(mode,d)=>{if(!['solo','race','coop'].includes(mode)||!DIFFICULTIES[d])throw new Error('Categoría inválida.');return `records_${mode==='race'?'carrera':mode}_${d}`;};
 export function leaderboardError(error){const c=error?.code||error?.message||'';return /permission.denied/i.test(c)?'Revisa las reglas de Realtime Database.':/unavailable|deadline|offline|Sin respuesta/i.test(c)?'Sin conexión. Reintenta.':'No se pudo cargar. Reintenta.';}
 // RTDB puede validar esta clave canónica; no puede calcular SHA-256 en sus reglas.

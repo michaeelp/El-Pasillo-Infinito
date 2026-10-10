@@ -1,8 +1,8 @@
 // Authentication conserva la sesión; RTDB reserva la identidad con reglas atómicas.
 // El modo invitado queda separado incluso si llega tarde un callback de persistencia.
-import {USERNAMES} from './config.js?v=1.3.1';
-import {firebaseApp,readData,withDeadline} from './sdk.js?v=1.3.1';
-import {provisionAccount,cleanupAccount,finishCleanup} from './accounts.js?v=1.3.1';
+import {USERNAMES} from './config.js?v=1.4.0';
+import {firebaseApp,readData,withDeadline} from './sdk.js?v=1.4.0';
+import {provisionAccount,cleanupAccount,finishCleanup} from './accounts.js?v=1.4.0';
 let service,sdk,ready,guest=false;
 const subscribers=new Set();
 const beforeExit=new Set();
@@ -17,7 +17,7 @@ export function validateUsername(value) {
 }
 export function authError(error) {
   const code=String(error?.code||'');
-  if(/^(Nombre|Elige|Solicitud|Límite|Ya sois|No recibe|Perfil|Partida|Sala|Equipo|Avatar|Jugador|Cuenta|Contraseña)/.test(error?.message||''))return error.message;
+  if(/^(Nombre|Elige|Solicitud|Límite|Ya sois|No recibe|Perfil|Partida|Sala|Equipo|Avatar|Jugador|Cuenta|Contraseña|Almas|Ya lo tienes|Requisito|Objeto|Inicia sesión|Carga el catálogo|Recarga la tienda|Atajo)/.test(error?.message||''))return error.message;
   if(code.includes('invalid-email'))return 'Correo inválido.';
   if(code.includes('email-already-in-use'))return 'Correo en uso.';
   if(/invalid-credential|wrong-password|user-not-found/.test(code))return 'Correo o contraseña incorrectos.';
@@ -60,7 +60,7 @@ export async function completeAccount(name) {if(!currentUser())throw new Error('
 export async function playAsGuest() {await initAuth().catch(()=>{});guest=true;if(service?.currentUser)await sdk.signOut(service);for(const cb of subscribers)cb(null);}
 export async function signOut() {
   for(const callback of beforeExit)await callback();
-  if(currentUser()){try{const friends=await import('./friends.js?v=1.3.1');await friends.setPresence('desconectado');await friends.stopFriends();}catch{}}
+  if(currentUser()){try{const friends=await import('./friends.js?v=1.4.0');await friends.setPresence('desconectado');await friends.stopFriends();}catch{}}
   if(service)await sdk.signOut(service);guest=false;
 }
 export async function resetPassword(email) {await initAuth();await sdk.sendPasswordResetEmail(service,email.trim());}
@@ -68,7 +68,7 @@ async function reauthenticate(password) {const user=currentUser();if(!user)throw
 export async function changePassword(current,newPassword) {if(newPassword.length<8)throw new Error('Contraseña: mínimo 8 caracteres.');await reauthenticate(current);await sdk.updatePassword(currentUser(),newPassword);}
 export async function deleteAccount(password) {
   await reauthenticate(password);for(const callback of beforeExit)await callback();
-  const friends=await import('./friends.js?v=1.3.1');await friends.stopFriends();await completeDeletion(currentUser());
+  const friends=await import('./friends.js?v=1.4.0');await friends.stopFriends();await completeDeletion(currentUser());
 }
 export async function resumeDeletion(){const user=currentUser();if(!user)return;let pending=false;try{pending=localStorage.getItem(`pasillo-delete-${user.uid}`)==='1';}catch{}if(pending||(await readData(`accountCleanup/${user.uid}`)).exists()||(await readData(`deletedAccounts/${user.uid}`)).exists()){await completeDeletion(user);throw new Error('Cuenta eliminada.');}}
 async function completeDeletion(user){

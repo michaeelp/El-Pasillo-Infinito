@@ -1,9 +1,9 @@
 // RTDB conserva solicitudes, amistades, presencia e invitaciones sin espejos de servidor.
 // generation/revision descartan respuestas antiguas al cambiar de cuenta o de lista.
-import {SOCIAL} from './config.js?v=1.3.1';
-import {currentUser,authError,validateUsername} from './auth.js?v=1.3.1';
-import {databaseService,readData,withDeadline} from './sdk.js?v=1.3.1';
-import {readProfile,playerNode,getProfile} from './profile.js?v=1.3.1';
+import {SOCIAL} from './config.js?v=1.4.0';
+import {currentUser,authError,validateUsername} from './auth.js?v=1.4.0';
+import {databaseService,readData,withDeadline} from './sdk.js?v=1.4.0';
+import {readIdentity,playerNode,getProfile} from './profile.js?v=1.4.0';
 let list=[],stops=[],peerStops=[],presence={},onChange=()=>{},invitationCallback=()=>{},seen=new Set(),generation=0;
 let serverOffset=0;
 export const socialNow=()=>Date.now()+serverOffset;
@@ -24,7 +24,7 @@ export async function friendAction(accion,other){
   const uid=currentUser()?.uid;if(!uid)throw new Error('Inicia sesión.');if(!other||other===uid||/[.#$\[\]/]/.test(other))throw new Error('Elige otro jugador.');
   const {r,db}=await databaseService(),mine=(await readData(`social/${uid}`)).val()||{},patch={};
   if(accion==='enviar'){
-    const p=(await readData(`users/${other}`)).val();if(!p)throw new Error('Perfil no disponible.');if(!p.preferencias?.solicitudes)throw new Error('No recibe solicitudes.');
+    const p=await readIdentity(other);if(!p)throw new Error('Perfil no disponible.');if((await readData(`users/${other}/preferencias/solicitudes`)).val()===false)throw new Error('No recibe solicitudes.');
     if(mine.confirmados?.[other]||mine.pendientes?.[other])throw Object.assign(new Error(mine.confirmados?.[other]?'Ya sois amigos.':'Solicitud pendiente.'),{code:'already-exists'});
     const rate=(await readData(`socialLimits/${uid}`)).val()||{};let slot=-1;for(let i=0;i<SOCIAL.solicitudesHora;i++)if(!rate[i]||rate[i].t<=socialNow()-3600000){slot=i;break;}
     if(slot<0)throw new Error('Límite de solicitudes por hora.');
@@ -53,6 +53,7 @@ export async function friendAction(accion,other){
 }
 export async function setPresence(estado='enLinea',sala='') {
   const user=currentUser();if(!user)return;const {r,db}=await databaseService(),ref=r.ref(db,`presencia/${user.uid}`);
+  if(getProfile()?.preferencias?.estadoVisible===false){estado='desconectado';sala='';}
   await r.onDisconnect(ref).set({estado:'desconectado',sala:'',t:r.serverTimestamp()});await r.set(ref,{estado,sala,t:r.serverTimestamp()});
 }
 export async function stopFriends() {
@@ -67,9 +68,9 @@ export async function startFriends(changed=()=>{},invite=()=>{}) {
   stops.push(r.onValue(r.ref(realtime.db,`social/${user.uid}`),async snapshot=>{
     const revision=++startFriends.revision;
     const social=snapshot.val()||{},entries=[...Object.keys(social.confirmados||{}).map(uid=>[uid,'amigos']),...Object.entries(social.pendientes||{}).map(([uid,p])=>[uid,p.de===user.uid?'pendienteEnviada':'pendienteRecibida'])];
-    const profiles=await Promise.all(entries.map(async([uid,estado])=>{const p=await readProfile(uid);return p?{...p,estado}:null;}));
+    const profiles=await Promise.all(entries.map(async([uid,estado])=>{const p=await readIdentity(uid);return p?{...p,estado}:null;}));
     if(token!==generation||revision!==startFriends.revision)return;list=profiles.filter(Boolean);for(const stop of peerStops.splice(0))stop();
-    for(const p of list.filter(p=>p.estado==='amigos'))peerStops.push(r.onValue(r.ref(realtime.db,`presencia/${p.uid}`),snap=>{presence[p.uid]=snap.val();onChange(friendList());}));onChange(friendList());
+    for(const p of list.filter(p=>p.estado==='amigos')){let off;const stopPrivacy=r.onValue(r.ref(realtime.db,`users/${p.uid}/preferencias/estadoVisible`),s=>{off?.();off=null;if(s.val()===false){presence[p.uid]=null;onChange(friendList());}else off=r.onValue(r.ref(realtime.db,`presencia/${p.uid}`),snap=>{presence[p.uid]=snap.val();onChange(friendList());},()=>{presence[p.uid]=null;onChange(friendList());});});peerStops.push(()=>{stopPrivacy();off?.();});}onChange(friendList());
   },error=>changed([],authError(error))));
   stops.push(r.onValue(r.ref(realtime.db,`invitaciones/${user.uid}`),snapshot=>{
     snapshot.forEach(s=>{const invitation={id:s.key,...s.val()};if(invitation.caducaEn<=socialNow()){dismissInvitation(s.key).catch(()=>{});return;}if(seen.has(s.key))return;seen.add(s.key);invitationCallback(invitation);});
@@ -78,6 +79,7 @@ export async function startFriends(changed=()=>{},invite=()=>{}) {
 startFriends.revision=0;
 export async function inviteFriend(uid,room) {
   const user=currentUser();if(!user||!friendIds().includes(uid))throw new Error('Solo puedes invitar a amigos.');
+  if((await readData(`users/${uid}/preferencias/invitaciones`)).val()===false)throw new Error('No recibe invitaciones.');
   const {r,db}=await databaseService(),ref=r.push(r.ref(db,`invitaciones/${uid}`));
   await withDeadline(r.update(r.ref(db),{[`invitaciones/${uid}/${ref.key}`]:{de:user.uid,nombre:getProfile().nombre,sala:room.code,modo:room.meta.modo,dificultad:room.meta.dificultad,creadoEn:r.serverTimestamp(),caducaEn:socialNow()+SOCIAL.invitacionMs-1000},[`enviadas/${user.uid}/${ref.key}`]:{dest:uid}}));
 }

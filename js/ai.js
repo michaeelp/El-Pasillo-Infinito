@@ -1,11 +1,11 @@
-import { AI } from './config.js?v=1.3.1';
+import { AI } from './config.js?v=1.4.0';
 export class Recognizer {
   constructor(onStatus){this.onStatus=onStatus;this.worker=null;this.ready=false;this.pending=null;this.loading=null;this.sequence=0;this.backend='';}
   load(){
     if(this.ready)return Promise.resolve();if(this.loading)return this.loading;
     this.worker?.terminate();this.ready=false;const files=new Map();let peak=0;
     this.loading=new Promise((resolve,reject)=>{
-      const worker=new Worker(new URL('./ai-worker.js?v=1.3.1',import.meta.url),{type:'module'});this.worker=worker;
+      const worker=new Worker(new URL('./ai-worker.js?v=1.4.0',import.meta.url),{type:'module'});this.worker=worker;
       const fail=()=>{clearTimeout(this.loadTimer);this.ready=false;this.loading=null;worker.terminate();this.onStatus({state:'error'});reject(new Error('La IA no pudo cargarse. Comprueba tu conexión y vuelve a intentarlo.'));};
       this.loadTimer=setTimeout(fail,AI.loadTimeoutMs);
       worker.onerror=()=>{if(!this.ready)fail();else{this.pending?.reject(new Error('El reconocimiento se interrumpió.'));this.reset();}};

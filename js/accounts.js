@@ -1,10 +1,10 @@
 // Perfil, nombre y código se reservan en una actualización atómica de RTDB.
 // Las reglas comprueban los tres destinos y rechazan conflictos, incluso entre pestañas.
-import {databaseService,readData,withDeadline} from './sdk.js?v=1.3.1';
-import {DIFFICULTIES,AVATAR_COUNT} from './config.js?v=1.3.1';
-import {emptyStats} from './xp.js?v=1.3.1';
+import {databaseService,readData,withDeadline} from './sdk.js?v=1.4.0';
+import {DIFFICULTIES,AVATAR_COUNT} from './config.js?v=1.4.0';
+import {emptyStats} from './xp.js?v=1.4.0';
 const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-export const normalizeProfile=p=>p?{...p,estadisticas:{...emptyStats(),...p.estadisticas,mejores:p.estadisticas?.mejores||{},bestiario:p.estadisticas?.bestiario||{},logros:p.estadisticas?.logros||[]}}:null;
+export const normalizeProfile=p=>p?{...p,monedas:p.monedas||0,inventario:p.inventario||{},equipado:p.equipado||{},preferencias:{solicitudes:true,estadoVisible:true,perfil:'todos',invitaciones:true,...p.preferencias},estadisticas:{...emptyStats(),...p.estadisticas,mejores:p.estadisticas?.mejores||{},bestiario:p.estadisticas?.bestiario||{},logros:p.estadisticas?.logros||[]}}:null;
 export async function provisionAccount(uid,nombre) {
   const {r,db}=await databaseService(),existing=await readData(`users/${uid}`);
   if(existing.exists())return normalizeProfile(existing.val());
@@ -16,7 +16,7 @@ export async function provisionAccount(uid,nombre) {
     const [name,code]=await Promise.all([readData(`usernames/${nombreLower}`),readData(`friendcodes/${codigoAmigo}`)]);
     if(name.exists())throw Object.assign(new Error('Nombre en uso.'),{code:'already-exists'});
     if(code.exists())continue;
-    const profile={nombre,nombreLower,avatar:1,xp:0,nivel:1,codigoAmigo,creadoEn:r.serverTimestamp(),estadisticas:emptyStats(),preferencias:{solicitudes:true},ultimaPartida:''};
+    const profile={nombre,nombreLower,avatar:1,xp:0,nivel:1,codigoAmigo,creadoEn:r.serverTimestamp(),estadisticas:emptyStats(),preferencias:{solicitudes:true,estadoVisible:true,perfil:'todos',invitaciones:true},ultimaPartida:'',monedas:0,ultimaOperacion:'',equipado:{marco:'',titulo:'',fondo:''}};
     try{await withDeadline(r.update(r.ref(db),{[`users/${uid}`]:profile,[`usernames/${nombreLower}`]:uid,[`friendcodes/${codigoAmigo}`]:uid,[`socialCounts/${uid}`]:{amigos:0,pendientes:0,otroUid:'',accion:'crear',fecha:r.serverTimestamp()}}));return normalizeProfile((await readData(`users/${uid}`)).val());}
     catch(error){
       // Una respuesta perdida no debe borrar una cuenta cuyo commit ya terminó.
@@ -58,6 +58,6 @@ export async function cleanupAccount(uid) {
   }
   await withDeadline(r.update(r.ref(db),patch));
   // Historial y reservas se eliminan junto al perfil. El marcador se conserva hasta terminar Auth.
-  await withDeadline(r.update(r.ref(db),{[`partidas/${uid}`]:null,[`users/${uid}`]:null,[`usernames/${marker.nombreLower}`]:null,[`friendcodes/${marker.codigoAmigo}`]:null,[`deletedAccounts/${uid}`]:true}));
+  await withDeadline(r.update(r.ref(db),{[`partidas/${uid}`]:null,[`movimientos/${uid}`]:null,[`users/${uid}`]:null,[`usernames/${marker.nombreLower}`]:null,[`friendcodes/${marker.codigoAmigo}`]:null,[`deletedAccounts/${uid}`]:true}));
 }
 export async function finishCleanup(uid){if(!(await readData(`accountCleanup/${uid}`)).exists())return;const {r,db}=await databaseService();await withDeadline(r.remove(r.ref(db,`accountCleanup/${uid}`)));}

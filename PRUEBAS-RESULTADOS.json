@@ -1,5 +1,5 @@
 {
-  "version": "1.3.1",
+  "version": "1.4.0",
   "report": [
     "Invitado: solo/local; 3 partidas completas con fondo persistente; sin perfil, XP ni récord global.",
     "Lienzo: seis pinceles, siete formas, goma/cubo/cuentagotas/simetría, capa al 50 %, 35 pasos, recorte de spray y exportación PNG en color blanco opaco.",
@@ -14,28 +14,5 @@
   "pageErrors": [],
   "forbiddenServices": [],
   "guestRuns": 3,
-  "CLIP": "doble de prueba; inferencia real pendiente de validación visual humana",
-  "unitTests": 21,
-  "rules": "SDK real en RTDB: identidad, XP/recibos, social/límites, invitaciones/equipos, expiración, borrado y token antiguo; resultado correcto.",
-  "sparkAdditional": [
-    "XP simultánea con recibo repetido: exactamente 26 XP y dos partidas.",
-    "Récords concurrentes: conserva el máximo de 8.",
-    "Limpieza desde Network: borra sala vencida y conserva activa.",
-    "Eliminación interrumpida: acceso reanuda limpieza y elimina Auth; UID bloqueado contra token antiguo."
-  ],
-  "migration": {
-    "resultado": "correcto",
-    "emuladores": [
-      "Authentication",
-      "Firestore (solo origen de prueba)",
-      "Realtime Database"
-    ],
-    "casos": [
-      "vista previa sin escrituras",
-      "copia en una actualización atómica",
-      "repetición sin volver a copiar",
-      "origen y Auth intactos",
-      "cuenta previamente eliminada omitida"
-    ]
-  }
+  "CLIP": "doble de prueba; inferencia real pendiente de validación visual humana"
 }

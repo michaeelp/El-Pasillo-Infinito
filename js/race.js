@@ -1,6 +1,6 @@
-import { roundDurations } from './config.js?v=1.3.1';
-import { countdownMs } from './difficulty.js?v=1.3.1';
-export {monsterSequence} from './pool.js?v=1.3.1';
+import { roundDurations } from './config.js?v=1.4.0';
+import { countdownMs } from './difficulty.js?v=1.4.0';
+export {monsterSequence} from './pool.js?v=1.4.0';
 export function roundPhase(meta, now) {
   const round=meta.modo==='coop'?meta.pasillos+1:meta.ronda;
   const duration=roundDurations(round,meta.dificultad),countMs=countdownMs(meta.dificultad,meta.semilla,meta.ronda);

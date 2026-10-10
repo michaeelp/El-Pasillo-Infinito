@@ -1,6 +1,6 @@
-# Tabla de audio
+# Tabla de audio · 1.4.0
 
-60 efectos originales de síntesis, propios de cada monstruo: WAV PCM16 mono, 22.050 Hz, sin muestras externas. Aparición: 0,44–0,77 s; screamer: 1,05–1,49 s. Los IDs 23–30 tienen timbres diferenciados de madera, chillidos, voz raspada, vibración líquida, chasquidos, golpes metálicos, aleteo y resonancia acuática.
+76 efectos originales distintos: WAV PCM16 mono, 22.050 Hz, sin muestras externas. Cada monstruo tiene su aparición y screamer. Los IDs 31–38 tienen perfiles de voz doble, metal, pulsación, insectos, arena, vibración, susurro e inversión; el generador es determinista.
 
 | ID | Monstruo | Aparición | Screamer |
 |---|---|---|---|
@@ -34,9 +34,21 @@
 | 28 | El Costurero | assets/audio/appear/28.wav | assets/audio/scream/28.wav |
 | 29 | Polilla Funeraria | assets/audio/appear/29.wav | assets/audio/scream/29.wav |
 | 30 | El Pescador Hundido | assets/audio/appear/30.wav | assets/audio/scream/30.wav |
+| 31 | El Último Huésped | assets/audio/appear/31.wav | assets/audio/scream/31.wav |
+| 32 | El Abrelatas | assets/audio/appear/32.wav | assets/audio/scream/32.wav |
+| 33 | El Ombliguero | assets/audio/appear/33.wav | assets/audio/scream/33.wav |
+| 34 | El Enjambre | assets/audio/appear/34.wav | assets/audio/scream/34.wav |
+| 35 | El Ahogado Seco | assets/audio/appear/35.wav | assets/audio/scream/35.wav |
+| 36 | El Parásito | assets/audio/appear/36.wav | assets/audio/scream/36.wav |
+| 37 | La Máscara de Carne | assets/audio/appear/37.wav | assets/audio/scream/37.wav |
+| 38 | El Invertido | assets/audio/appear/38.wav | assets/audio/scream/38.wav |
 
-Los archivos se cargan una vez y se reproducen en SOLO, Carrera y Cooperativo según el monstruo. En Cooperativo el sonido de aparición se reproduce en el Vigía que ve el flash. Volumen, silencio y sustos atenuados se aplican mediante el bus de efectos. La música y los efectos de pasos, hojas y latidos siguen en Web Audio.
+| Ambiente | Archivo | Formato |
+|---|---|---|
+| Bucle de ambiente | assets/audio/ambience.wav | WAV PCM16 mono, 22.050 Hz, 8 s |
 
-Puedes sustituir cualquier WAV por tus sonidos conservando la ruta. Si cambias la ruta, actualiza el campo correspondiente en monsters.json. Usa archivos que tengas derecho a utilizar. Incrementa VERSION y los sufijos de recursos al publicar otro conjunto para evitar caché antigua.
+Precarga y caché durante la sesión. Cinco controles independientes: general, música, efectos, screamers y ambiente. El bucle de ambiente arranca aunque su descarga termine después del primer clic. Destellos/sustos reducidos, silencio al perder el foco y subtítulos Aparición/Screamer/Latido se aplican en todos los modos.
 
-Generación reproducible: python3 tools/generate_audio.py. Código y sonidos originales: puedes usarlos y modificarlos en este proyecto.
+En Cooperativo la aparición suena para el Vigía que ve el flash. Pasos, hojas, latidos y drones musicales se sintetizan en Web Audio. Puedes sustituir los WAV por sonidos propios conservando rutas o actualizando monsters.json. Aumenta VERSION y sufijos de recursos al publicarlos.
+
+Reproducir: python3 tools/generate_audio.py. Código y sonidos originales utilizables y modificables en este proyecto.

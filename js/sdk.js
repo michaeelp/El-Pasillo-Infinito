@@ -1,5 +1,5 @@
-import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.3.1';
-import { APP_CHECK } from './config.js?v=1.3.1';
+import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.4.0';
+import { APP_CHECK } from './config.js?v=1.4.0';
 let appPromise;
 export const isConfigured = () => !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.appId);
 export function withDeadline(promise, ms = ONLINE.networkMs) {

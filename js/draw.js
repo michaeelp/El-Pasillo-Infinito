@@ -1,8 +1,8 @@
 // ink es la imagen confirmada y opaca; layer contiene solo el trazo en curso.
 // El canvas visible combina ambas para la vista previa, sin modificar el historial.
-import {AI} from './config.js?v=1.3.1';
-import {dab,brushSegment} from './draw/brushes.js?v=1.3.1';
-import {SHAPES,paintShape} from './draw/shapes.js?v=1.3.1';
+import {AI} from './config.js?v=1.4.0';
+import {dab,brushSegment} from './draw/brushes.js?v=1.4.0';
+import {SHAPES,paintShape} from './draw/shapes.js?v=1.4.0';
 const SIZE=512;
 export const COLORS=[['Negro','#171717'],['Rojo','#dc3232'],['Naranja','#eb852a'],['Amarillo','#efce37'],['Verde','#329248'],['Azul','#3370cd'],['Violeta','#8c48b1'],['Rosa','#ed91bc'],['Marrón','#815133'],['Gris','#818181'],['Celeste','#70cfe0'],['Blanco','#ffffff']];
 export class Drawing {

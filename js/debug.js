@@ -1,4 +1,4 @@
-import { confusables } from './config.js?v=1.3.1';
+import { confusables } from './config.js?v=1.4.0';
 export function showDebug(results,labels){
   if(new URLSearchParams(location.search).get('debug')!=='1')return;
   const byId=new Map(labels.map(word=>[word.id,word]));

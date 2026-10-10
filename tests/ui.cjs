@@ -25,7 +25,7 @@ async function setup(context,name='Ana',avatar=1,deterministic=true){
  await sdkRoutes(context);
  await context.addInitScript(({name,avatar,deterministic})=>{
   if(deterministic)Math.random=()=>0;
-  window.Worker=class{postMessage(data){setTimeout(()=>{const first=window.__label||'a digging shovel';if(data.labels)window.__candidateLabels=data.labels;this.onmessage?.({data:data.type==='load'?{type:'ready',backend:'test-double'}:{type:'result',id:data.id,results:[{label:first,score:.9},...data.labels.filter(label=>label!==first).slice(0,4).map((label,i)=>({label,score:[.04,.03,.02,.01][i]}))]}});},30);}terminate(){}};
+  window.Worker=class{postMessage(data){setTimeout(()=>{const first=window.__label||'a digging shovel';if(data.labels)window.__candidateLabels=data.labels;this.onmessage?.({data:data.type==='load'?{type:'ready',backend:'test-double'}:{type:'result',id:data.id,results:[{label:first,score:.9},...data.labels.filter(label=>label!==first).slice(0,window.__allLabels?undefined:4).map((label,i)=>({label,score:[.04,.03,.02,.01][i]||0}))]}});},30);}terminate(){}};
  },{name,avatar,deterministic});
  const page=await context.newPage();page.on('pageerror',error=>{errors.push(error.message);console.error(error.stack);});
  await page.goto('http://127.0.0.1:8002',{waitUntil:'domcontentloaded'});await page.click('#accept');await page.waitForFunction(()=>!document.getElementById('play').disabled).catch(async e=>{console.error(await page.evaluate(()=>({state:document.body.dataset.state,ai:document.getElementById('ai-status').textContent,auth:document.getElementById('auth-status').textContent})));throw e;});await state(page,'access');await page.evaluate(()=>window.__backgroundNode=document.getElementById('corridor'));

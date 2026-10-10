@@ -1,9 +1,9 @@
-import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.3.1';
-import { firebaseApp, isConfigured, withDeadline } from './sdk.js?v=1.3.1';
-import { sanitizeName } from './storage.js?v=1.3.1';
-import {currentUser} from './auth.js?v=1.3.1';
-import {setPresence} from './friends.js?v=1.3.1';
-import {difficulty} from './difficulty.js?v=1.3.1';
+import { FIREBASE_CONFIG, ONLINE } from './config.js?v=1.4.0';
+import { firebaseApp, isConfigured, withDeadline } from './sdk.js?v=1.4.0';
+import { sanitizeName } from './storage.js?v=1.4.0';
+import {currentUser} from './auth.js?v=1.4.0';
+import {setPresence} from './friends.js?v=1.4.0';
+import {difficulty} from './difficulty.js?v=1.4.0';
 export const onlineConfigured = () => isConfigured() && !!FIREBASE_CONFIG.databaseURL;
 export const networkError = error => /permission|denied/i.test(error?.message || '') ? 'Acceso rechazado. Revisa las reglas de Firebase.' : /operation-not-allowed/i.test(error?.message || '') ? 'Activa Email/Contraseña en Firebase.' : error?.message==='Inicia sesión.'?'Inicia sesión.':'No se pudo conectar. Reintenta.';
 export const shortError = error => /^(Espera|Avatar|Ese rol|No se|La sala|La partida|Cooperativo|Faltan|Firebase)/.test(error?.message||'') ? error.message : networkError(error);

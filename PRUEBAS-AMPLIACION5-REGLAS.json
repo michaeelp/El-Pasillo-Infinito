@@ -1,0 +1,13 @@
+{
+  "version": "1.4.0",
+  "report": [
+    "Recibo atómico, 43 almas exactas, monstruo 38, idempotencia y retención de logros.",
+    "SOLO/COOP/CARRERA, redondeo, bonificaciones y máximo 1000; rechazos de recibos falsos/incompletos.",
+    "Compra exacta, saldo insuficiente, compra repetida, inventario/movimiento indivisibles y equipamiento por tipo.",
+    "Desbloqueos sin coste por logro Pesadilla 10 y nivel; requisitos pendientes rechazados.",
+    "Dos compras concurrentes con saldo para una: una aceptada, otra rechazada.",
+    "Ajustes completos guardados; rangos, FPS, atajos repetidos, campos extra y escrituras ajenas rechazados.",
+    "Perfil privado: solo amigos; identidad pública para marcadores; estado oculto incluso a amigos.",
+    "La misma invitación válida se rechaza al desactivar la recepción."
+  ]
+}

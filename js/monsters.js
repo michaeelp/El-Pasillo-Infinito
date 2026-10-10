@@ -1,9 +1,9 @@
-import { VERSION, MONSTER_COUNT } from './config.js?v=1.3.1';
+import { VERSION } from './config.js?v=1.4.0';
 export async function loadMonsters() {
   const response = await fetch(`monsters.json?v=${VERSION}`);
   if (!response.ok) throw new Error('No se pudo abrir el bestiario. Recarga la página.');
   const monsters = await response.json();
-  if (!Array.isArray(monsters) || monsters.length !== MONSTER_COUNT || new Set(monsters.map(m=>m.id)).size !== MONSTER_COUNT || monsters.some(m=>!Number.isInteger(m.id)||m.id<1||m.id>MONSTER_COUNT||typeof m.lore!=='string'||!Array.isArray(m.debilidades)||m.debilidades.length<1||m.debilidades.length>3||m.debilidades.some(w=>!w.id||!w.nombre||!w.etiquetaCLIP))) throw new Error('El bestiario está incompleto. Recarga.');
+  if (!Array.isArray(monsters) || !monsters.length || new Set(monsters.map(m=>m.id)).size !== monsters.length || monsters.some(m=>!Number.isInteger(m.id)||m.id<1||m.id>monsters.length||typeof m.lore!=='string'||!Array.isArray(m.debilidades)||m.debilidades.length<1||m.debilidades.length>3||m.debilidades.some(w=>!w.id||!w.nombre||!w.etiquetaCLIP))) throw new Error('El bestiario está incompleto. Recarga.');
   return monsters;
 }
 export function chooseMonster(monsters, previous) {

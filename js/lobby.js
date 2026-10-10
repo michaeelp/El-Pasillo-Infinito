@@ -1,10 +1,10 @@
-import { ONLINE } from './config.js?v=1.3.1';
-import { Network, networkError, shortError } from './net.js?v=1.3.1';
-import { getProfile, playerNode } from './profile.js?v=1.3.1';
-import { assignRoles, ROLES } from './coop.js?v=1.3.1';
-import { screen, toast } from './ui.js?v=1.3.1';
-import {difficulty,populateDifficulties} from './difficulty.js?v=1.3.1';
-import {renderFriends} from './friends.js?v=1.3.1';
+import { ONLINE } from './config.js?v=1.4.0';
+import { Network, networkError, shortError } from './net.js?v=1.4.0';
+import { getProfile, playerNode } from './profile.js?v=1.4.0';
+import { assignRoles, ROLES } from './coop.js?v=1.4.0';
+import { screen, toast } from './ui.js?v=1.4.0';
+import {difficulty,populateDifficulties} from './difficulty.js?v=1.4.0';
+import {renderFriends} from './friends.js?v=1.4.0';
 const $ = id => document.getElementById(id);
 export function messages(value) {return Object.values(value || {}).flatMap(branch=>Object.values(branch || {})).filter(item=>item&&typeof item==='object'&&typeof item.texto==='string').sort((a,b)=>a.t-b.t).slice(-30);}
 export function createChat(root, net, quick = false) {
@@ -19,7 +19,7 @@ export function createChat(root, net, quick = false) {
   return data=>{
     const incoming=messages(data.chat),key=JSON.stringify(incoming);if(key===previous)return;previous=key;
     list.replaceChildren();
-    for(const message of incoming){const row=document.createElement('li'),text=document.createElement('span');text.className='message';text.textContent=String(message.texto).slice(0,60);row.append(playerNode(data.jugadores[message.uid]||{nombre:'Jugador',avatar:1}),text);list.append(row);}
+    for(const message of incoming){const row=document.createElement('li'),text=document.createElement('span');text.className='message';text.textContent=String(message.texto).slice(0,60);row.append(playerNode({...data.jugadores[message.uid],uid:message.uid}),text);list.append(row);}
     list.scrollTop=list.scrollHeight;
   };
 }
@@ -90,7 +90,7 @@ export class Lobby {
     for(const option of $('role-choice').options)option.disabled=!!option.value&&Object.entries(data.jugadores).some(([uid,p])=>uid!==data.uid&&p.rol===option.value);
     $('players').replaceChildren();
     for(const[uid,player]of Object.entries(data.jugadores)){
-      const row=document.createElement('li');row.append(playerNode(player,false,player.rol));
+      const row=document.createElement('li');row.append(playerNode({...player,uid},false,player.rol));
       if(uid===data.meta.host){const crown=document.createElement('span');crown.textContent='♛';crown.title='Anfitrión';row.append(crown);}
       if(player.rol){const role=document.createElement('span');role.textContent=ROLES[player.rol];row.append(role);}
       const status=document.createElement('span');status.className='player-status';status.textContent=player.ausente?'Ausente':player.listo&&(player.readyRevision||0)===(data.meta.revision||0)?'Listo':player.iaLista?'Conectado':`IA: ${player.progreso||0} %`;

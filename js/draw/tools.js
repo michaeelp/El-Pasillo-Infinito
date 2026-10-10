@@ -1,7 +1,8 @@
-import {COLORS} from '../draw.js?v=1.3.1';
-import {ColorWheel} from './wheel.js?v=1.3.1';
-import {BRUSHES} from './brushes.js?v=1.3.1';
-const names={brush:'Pincel (B)',eraser:'Goma (E)',fill:'Cubo (G)',eyedropper:'Cuentagotas (I)',line:'Línea (L)',rectangle:'Rectángulo (R)',ellipse:'Elipse (C)',triangle:'Triángulo (T)',star:'Estrella (S)',heart:'Corazón (H)',arrow:'Flecha (A)'};
+import {COLORS} from '../draw.js?v=1.4.0';
+import {ColorWheel} from './wheel.js?v=1.4.0';
+import {BRUSHES} from './brushes.js?v=1.4.0';
+import {getSettings} from '../settings.js?v=1.4.0';
+const names={brush:'Pincel',eraser:'Goma',fill:'Cubo',eyedropper:'Cuentagotas',line:'Línea',rectangle:'Rectángulo',ellipse:'Elipse',triangle:'Triángulo',star:'Estrella',heart:'Corazón',arrow:'Flecha'};
 export function setupTools(drawing) {
   const $=id=>document.getElementById(id),recent=[];
   const mobile=matchMedia('(max-width:600px)');
@@ -23,7 +24,7 @@ export function setupTools(drawing) {
   $('undo').onclick=()=>drawing.undo();$('redo').onclick=()=>drawing.redo();$('clear').onclick=()=>{if(drawing.enabled)drawing.clear();};
   let pointer={x:256,y:256};const circle=$('brush-cursor');function cursor(){const rect=drawing.canvas.getBoundingClientRect(),scale=rect.width/512,size=(drawing.tool==='eraser'?drawing.eraserSize:drawing.size)*scale;circle.style.width=circle.style.height=size+'px';circle.style.left=pointer.x*scale+'px';circle.style.top=pointer.y*scale+'px';}
   drawing.cursor=p=>{pointer=p;circle.hidden=!drawing.enabled;cursor();};drawing.canvas.onpointerleave=()=>circle.hidden=true;
-  const keys={b:'brush',e:'eraser',g:'fill',i:'eyedropper',l:'line',r:'rectangle',c:'ellipse',t:'triangle',s:'star',h:'heart',a:'arrow'};
-  drawing.handleKey=e=>{if(!drawing.enabled)return false;const key=e.key.toLowerCase();if((e.ctrlKey||e.metaKey)&&key==='z'){e.shiftKey?drawing.redo():drawing.undo();return true;}if((e.ctrlKey||e.metaKey)&&key==='y'){drawing.redo();return true;}if(keys[key]&&!e.ctrlKey&&!e.metaKey){selectTool(keys[key]);return true;}const n=Number(key);if(n>=1&&n<=6){drawing.brush=BRUSHES[n-1][0];$('brush-kind').value=drawing.brush;selectTool('brush');return true;}return false;};
+  drawing.applyDefaults=()=>{const s=getSettings();drawing.brush=s.defaultBrush;$('brush-kind').value=drawing.brush;selectTool(s.defaultTool);};
+  drawing.handleKey=e=>{if(!drawing.enabled)return false;const key=e.key.toLowerCase(),s=getSettings(),keys={[s.keyBrush]:'brush',[s.keyEraser]:'eraser',[s.keyFill]:'fill',[s.keyPicker]:'eyedropper'};if((e.ctrlKey||e.metaKey)&&key==='z'){e.shiftKey?drawing.redo():drawing.undo();return true;}if((e.ctrlKey||e.metaKey)&&key==='y'){drawing.redo();return true;}if(keys[key]&&!e.ctrlKey&&!e.metaKey){selectTool(keys[key]);return true;}const n=Number(key);if(n>=1&&n<=6){drawing.brush=BRUSHES[n-1][0];$('brush-kind').value=drawing.brush;selectTool('brush');return true;}return false;};
   setColor(drawing.color);
 }

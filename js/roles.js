@@ -1,4 +1,4 @@
-import { ROLES } from './coop.js?v=1.3.1';
+import { ROLES } from './coop.js?v=1.4.0';
 const $ = id => document.getElementById(id);
 export function roleView(role, selectTab, drawing, phase = 'book') {
   $('active-role').hidden = !role; $('active-role').textContent = ROLES[role] || '';

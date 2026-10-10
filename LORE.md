@@ -1,6 +1,6 @@
-# Lore de los 30 monstruos
+# Lore de los 38 monstruos
 
-Generado desde monsters.json. En el libro no se muestran las debilidades.
+Versión 1.4.0. Generado desde monsters.json. El libro muestra retrato, nombre, lore y folio; nunca lista debilidades ni apariencia.
 
 ## 1. El Descarnado
 
@@ -181,3 +181,52 @@ Se instaló en la habitación donde velaban a los muertos. Sigue la luz conectad
 Su barco desapareció en aguas profundas y volvió sin tripulación. Retrocede ante los cuadrados de hilo que encierran cardúmenes y la curva metálica cebada al final de un sedal. Para regresar a cubierta exige escuchar un graznido sobre las olas.
 
 40 palabras.
+
+## 31. El Último Huésped
+
+Alquiló una habitación por una noche y nunca entregó el metal que giraba en su cerradura. Cada madrugada prepara la despedida; solo retrocede cuando oye el equipaje cerrarse antes de salir.
+
+31 palabras.
+
+## 32. El Abrelatas
+
+Quedó encerrado en el almacén durante el invierno. Detesta el giro que aprieta las piezas flojas y todavía busca las raciones selladas que alimentaron a los últimos obreros; al oír abrir una, abandona la persecución.
+
+35 palabras.
+
+## 33. El Ombliguero
+
+Vivía entre la ropa abandonada del hospicio. Nunca soportó que un pequeño disco atravesara su ojal; las prendas de mangas cortas que cubrían el vientre de los internos lo mantenían encerrado hasta la siguiente colada.
+
+35 palabras.
+
+## 34. El Enjambre
+
+Colonizó el jardín del convento siguiendo el néctar. Los monjes aprendieron a retenerlo bajo un recipiente transparente con tapa; cuando escapaba, un aparato de aspas sobre la mesa dispersaba su avance sin despertar a los demás.
+
+36 palabras.
+
+## 35. El Ahogado Seco
+
+Cruzó el desierto buscando un cauce que ya no existía. Solo interrumpe su marcha ante una bebida transparente servida en un recipiente abierto; también sigue a los habitantes que nadan bajo la superficie, aunque nunca consigue alcanzarlos.
+
+37 palabras.
+
+## 36. El Parásito
+
+Se instaló en los enfermos del sanatorio y resistió todos los ungüentos. El médico logró desalojarlo al empujar un émbolo, atravesando la piel con una punta hueca.
+
+27 palabras.
+
+## 37. La Máscara de Carne
+
+Suplantaba a los actores antes de cada función. Perdía el papel cuando alguien corregía su visión con dos cristales, comprobaba quién lo imitaba al otro lado del azogue o trazaba rojo alrededor de la sonrisa antes de salir a escena.
+
+40 palabras.
+
+## 38. El Invertido
+
+Repitió la misma guardia hasta olvidar el amanecer. Solo puede comenzar otra vez cuando alguien gira dos cámaras unidas y deja caer los granos por su cuello estrecho.
+
+28 palabras.
+

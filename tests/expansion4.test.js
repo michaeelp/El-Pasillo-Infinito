@@ -2,12 +2,13 @@ import {createHash} from 'node:crypto';import test from 'node:test';import asser
 import {DIFFICULTIES,roundDurations,XP} from '../js/config.js';
 import {monsterSequence,MonsterPool} from '../js/pool.js';
 import {countdownMs,winningResult} from '../js/difficulty.js';
-import {matchXp,levelFor,xpParaSubir,updatedStats,emptyStats} from '../js/xp.js';
+import {matchXp,levelFor,xpParaSubir,updatedStats,emptyStats,setMonsterCatalog} from '../js/xp.js';
 import {validateUsername} from '../js/auth.js';
 import {scoreRound} from '../js/scoring.js';
 const monsters=JSON.parse(fs.readFileSync(new URL('../monsters.json',import.meta.url)));
+setMonsterCatalog(monsters);
 test('bolsa: 64 semillas × 300 pasillos, bloques completos y frontera sin repetición',()=>{
- for(let seed=0;seed<64;seed++){const seq=monsterSequence(seed,monsters,300);assert.deepEqual(seq,monsterSequence(seed,monsters,300));for(let cycle=0;cycle<10;cycle++)assert.equal(new Set(seq.slice(cycle*30,cycle*30+30).map(m=>m.id)).size,30);for(let i=1;i<seq.length;i++)assert.notEqual(seq[i].id,seq[i-1].id);const pool=new MonsterPool(seed,monsters);assert.deepEqual(Array.from({length:95},()=>pool.next()),seq.slice(0,95));}
+ for(let seed=0;seed<64;seed++){const seq=monsterSequence(seed,monsters,300);assert.deepEqual(seq,monsterSequence(seed,monsters,300));for(let cycle=0;cycle<Math.floor(seq.length/monsters.length);cycle++)assert.equal(new Set(seq.slice(cycle*monsters.length,cycle*monsters.length+monsters.length).map(m=>m.id)).size,monsters.length);for(let i=1;i<seq.length;i++)assert.notEqual(seq[i].id,seq[i-1].id);const pool=new MonsterPool(seed,monsters);assert.deepEqual(Array.from({length:95},()=>pool.next()),seq.slice(0,95));}
 });
 test('las cuatro dificultades usan los valores y mínimos solicitados',()=>{
  const starts={facil:[75000,1500],normal:[60000,1000],dificil:[50000,800],pesadilla:[40000,600]},mins={facil:[75000,1500],normal:[25000,250],dificil:[20000,200],pesadilla:[15000,150]};
@@ -25,9 +26,9 @@ test('XP por modo, curva acumulativa, máximo 99, límite 600 y semillas sin XP'
  assert.equal(matchXp({modo:'solo',dificultad:'facil',pasillos:2,precisiones:[1,.4]}),17);assert.equal(matchXp({modo:'coop',dificultad:'pesadilla',pasillos:10}),100);assert.equal(matchXp({modo:'race',puntos:4000,puesto:1}),130);assert.equal(matchXp({modo:'solo',pasillos:1000}),600);assert.equal(matchXp({modo:'race',puntos:10000,personalizada:true}),0);
  let xp=0;for(let n=1;n<99;n++){assert.equal(levelFor(xp).nivel,n);assert.equal(levelFor(xp+xpParaSubir(n)-1).nivel,n);xp+=xpParaSubir(n);assert.equal(levelFor(xp).nivel,n+1);}assert.equal(levelFor(xp+1000000000).nivel,99);assert.equal(XP.nivelMax,99);
 });
-test('estadísticas, mejores y los 12 logros derivan de resultados',()=>{
- const s=updatedStats(emptyStats(),{modo:'race',dificultad:'pesadilla',puesto:1,pasillos:30,puntos:9000,tiempoMs:2000,racha:5,margen3:true,precisiones:[.95],encuentros:monsters.map(m=>({id:m.id,ok:true}))});
- assert.equal(s.partidas,1);assert.equal(s.carrerasGanadas,1);assert.equal(s.mejores.race_pesadilla,9000);assert(s.logros.includes('treinta'));assert(s.logros.includes('vistos'));assert(s.logros.includes('margen'));assert(s.logros.includes('precision'));assert.equal(Object.keys(s.bestiario).length,30);
+test('estadísticas, mejores y los logros derivan de resultados',()=>{
+ const s=updatedStats(emptyStats(),{modo:'race',dificultad:'pesadilla',puesto:1,pasillos:monsters.length,puntos:9000,tiempoMs:2000,racha:5,margen3:true,precisiones:[.95],encuentros:monsters.map(m=>({id:m.id,ok:true}))});
+ assert.equal(s.partidas,1);assert.equal(s.carrerasGanadas,1);assert.equal(s.mejores.race_pesadilla,9000);assert(s.logros.includes('treinta'));assert(s.logros.includes('vistos'));assert(s.logros.includes('margen'));assert(s.logros.includes('precision'));assert.equal(Object.keys(s.bestiario).length,monsters.length);
 });
 test('nombres permanentes: formato, acentos, reservados y filtro',()=>{assert.equal(validateUsername('Álex_12'),'Álex_12');for(const n of ['ab','demasiado_largo_123','Ana López','<Juan>','admin','ADMIN','puto123'])assert.throws(()=>validateUsername(n));});
 test('12 avatares, originales intactos y cuatro nuevos con seis variantes',()=>{

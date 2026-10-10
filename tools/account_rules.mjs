@@ -8,7 +8,7 @@ const cleaning="root.child('accountCleanup').child(auth.uid).exists()";
 const integer=(value,min=0,max=1e12)=>`${value}.isNumber() && ${value}.val() % 1 == 0 && ${value}.val() >= ${min} && ${value}.val() <= ${max}`;
 const bool={'.validate':'newData.isBoolean()'};
 const forbidden={'.validate':false};
-export function accountRules(){
+export function accountRules(monsters=[]){
  const out={};let total=0;const levels=[];
  for(let n=1;n<=XP.nivelMax;n++){const next=total+Math.round(XP.base*n**XP.exponente);levels.push(`(newData.child('nivel').val() == ${n} && newData.child('xp').val() >= ${total}${n<XP.nivelMax?` && newData.child('xp').val() < ${next}`:''})`);total=next;}
  const receipt=`${future}.child('partidas').child($uid).child(newData.child('ultimaPartida').val())`;
@@ -28,7 +28,7 @@ export function accountRules(){
  const statsMatch="newData.parent().parent().child('ultimaPartida').val() != root.child('users').child($uid).child('ultimaPartida').val()";
  for(const k of statsFields)stats[k]={'.validate':`${integer('newData')} && (!data.exists() || newData.val() == data.val() || (${statsMatch} && newData.val() >= data.val()))`};
  stats.mejores={$key:{'.validate':`${integer('newData',0,50000)} && $key.matches(/^(solo|race|coop)_(facil|normal|dificil|pesadilla)$/) && (!data.exists() || newData.val() >= data.val())`}};
- stats.bestiario={$id:{'.validate':"$id.matches(/^([1-9]|[12][0-9]|30)$/) && newData.hasChildren(['vistos','vencidos']) && newData.child('vencidos').val() <= newData.child('vistos').val()",vistos:{'.validate':integer('newData')},vencidos:{'.validate':integer('newData')},$other:forbidden}};
+ stats.bestiario={$id:{'.validate':`$id.matches(/^(${monsters.map(m=>m.id).join('|')})$/) && newData.hasChildren(['vistos','vencidos']) && newData.child('vencidos').val() <= newData.child('vistos').val()`,vistos:{'.validate':integer('newData')},vencidos:{'.validate':integer('newData')},$other:forbidden}};
  stats.logros={$i:{'.validate':"$i.matches(/^([0-9]|1[01])$/) && newData.isString() && newData.val().matches(/^(primera|diez|cincuenta|carrera|margen|treinta|vistos|racha|coop|precision|pesadilla|veterano)$/)"}};
  for(const [branch,field,key]of [['usernames','nombreLower','$name'],['friendcodes','codigoAmigo','$code']]){
   out[branch]={[key]:{'.read':account,'.write':`${account} && ((!data.exists() && newData.val() == auth.uid && ${future}.child('users').child(auth.uid).child('${field}').val() == ${key}) || (!newData.exists() && data.val() == auth.uid && ${cleaning} && !${future}.child('users').child(auth.uid).exists()))`,'.validate':"newData.isString() && newData.val() == auth.uid"}};

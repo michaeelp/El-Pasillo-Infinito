@@ -1,19 +1,20 @@
-import { GAME, ONLINE, roundDurations } from './config.js?v=1.3.1';
-import { roundPhase, monsterSequence } from './race.js?v=1.3.1';
-import { rotateRoles, roleUid } from './coop.js?v=1.3.1';
-import { roleView } from './roles.js?v=1.3.1';
-import { precisionFor, raceBoard, standings } from './scoring.js?v=1.3.1';
-import { playerNode } from './profile.js?v=1.3.1';
-import { createChat, messages } from './lobby.js?v=1.3.1';
-import { setPortrait } from './monsters.js?v=1.3.1';
-import { publishRecord } from './records.js?v=1.3.1';
-import { awardMatch } from './xp.js?v=1.3.1';
-import { difficulty,winningResult } from './difficulty.js?v=1.3.1';
-import { background } from './background.js?v=1.3.1';
-import { shortError } from './net.js?v=1.3.1';
-import { $, toast } from './ui.js?v=1.3.1';
-import { judge, topResult } from './ai.js?v=1.3.1';
-import { showDebug } from './debug.js?v=1.3.1';
+import { GAME, ONLINE, roundDurations } from './config.js?v=1.4.0';
+import { roundPhase, monsterSequence } from './race.js?v=1.4.0';
+import { rotateRoles, roleUid } from './coop.js?v=1.4.0';
+import { roleView } from './roles.js?v=1.4.0';
+import { precisionFor, raceBoard, standings } from './scoring.js?v=1.4.0';
+import { playerNode } from './profile.js?v=1.4.0';
+import { createChat, messages } from './lobby.js?v=1.4.0';
+import { setPortrait } from './monsters.js?v=1.4.0';
+import { publishRecord } from './records.js?v=1.4.0';
+import { awardMatch } from './xp.js?v=1.4.0';
+import {showReward} from './economy.js?v=1.4.0';
+import { difficulty,winningResult } from './difficulty.js?v=1.4.0';
+import { background } from './background.js?v=1.4.0';
+import { shortError } from './net.js?v=1.4.0';
+import { $, toast } from './ui.js?v=1.4.0';
+import { judge, topResult } from './ai.js?v=1.4.0';
+import { showDebug } from './debug.js?v=1.4.0';
 const validImage = value => typeof value==='string' && value.length<=ONLINE.maxThumbnail && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(value);
 export class OnlineSession {
   constructor(deps) {
@@ -64,7 +65,7 @@ export class OnlineSession {
         const monster=monsterSequence(this.data.meta.semilla,this.getMonsters(),this.data.meta.ronda).at(-1);return this.net.secret(key,monster.id);
       }).catch(()=>toast('No se pudo cargar el monstruo.'));
     }
-    this.getBook()?.go(Math.floor(Math.random()*this.getMonsters().length),false);
+    this.getBook()?.reset();this.drawing.applyDefaults?.();
     $('round-label').textContent=this.data.meta.modo==='race'?'RONDA':'PASILLO';
     $('level').textContent=String(this.data.meta.modo==='race'?this.data.meta.ronda:this.data.meta.pasillos+1).padStart(2,'0');
     $('pause').hidden=true;$('online-leave').hidden=false;$('online-board').hidden=this.data.meta.modo==='coop';
@@ -223,13 +224,13 @@ export class OnlineSession {
     const list=document.createElement('ul');list.className='scoreboard';
     for(const[uid,player]of Object.entries(this.data.jugadores)){
       const score=board[uid]||{points:0,lives:difficulty(this.data.meta.dificultad).vidas};const row=document.createElement('li');row.className=score.lives<=0?'ghost':score.gained===0?'failed':'';
-      const text=document.createElement('span');text.textContent=`${score.points} · ${score.lives} vidas`;row.append(playerNode(player),text);list.append(row);
+      const text=document.createElement('span');text.textContent=`${score.points} · ${score.lives} vidas`;row.append(playerNode({...player,uid}),text);list.append(row);
     }root.replaceChildren(list);
   }
   resultCard(uid,record,points=0,ok=false) {
     const card=document.createElement('article');card.className=`drawing-result ${ok?'ok':'failed'}`;
     if(validImage(record?.miniatura)){const image=document.createElement('img');image.alt='Dibujo';image.src=record.miniatura;card.append(image);}
-    card.append(playerNode(this.data.jugadores[uid]||{nombre:'Jugador',avatar:1}));
+    card.append(playerNode({...this.data.jugadores[uid],uid}));
     const label=document.createElement('p');label.textContent=this.recognized(record);card.append(label);
     const total=document.createElement('p');total.textContent=`${points} puntos`;card.append(total);return card;
   }
@@ -250,7 +251,7 @@ export class OnlineSession {
       this.renderBoard($('reveal-board'),meta.board||{});
     } else {
       const drawer=roleUid(meta,'dibujante');$('reveal-results').append(this.resultCard(drawer,this.data.resultados[this.key]?.[drawer],0,meta.ok));
-      const team=document.createElement('div');team.className='coop-result';for(const[uid,player]of Object.entries(this.data.jugadores))team.append(playerNode(player,false,meta.roles[uid]));
+      const team=document.createElement('div');team.className='coop-result';for(const[uid,player]of Object.entries(this.data.jugadores))team.append(playerNode({...player,uid},false,meta.roles[uid]));
       const score=document.createElement('p');score.textContent=`${meta.pasillos} pasillos · ${meta.vidas} vidas`;$('reveal-board').replaceChildren(team,score);
     }
   }
@@ -259,7 +260,7 @@ export class OnlineSession {
     $('rematch').disabled=meta.host!==this.net.uid;
     const ranking=meta.modo==='race'?standings(meta.board||{}):Object.keys(this.data.jugadores).map(uid=>[uid,{points:meta.pasillos}]);
     this.ranking=ranking;
-    for(const[uid,score]of ranking){const row=document.createElement('div'),total=document.createElement('strong');row.append(playerNode(this.data.jugadores[uid],false));total.textContent=score.points+(meta.modo==='coop'?' pasillos':' puntos');row.append(total);$('podium-list').append(row);}
+    for(const[uid,score]of ranking){const row=document.createElement('div'),total=document.createElement('strong');row.append(playerNode({...this.data.jugadores[uid],uid},false));total.textContent=score.points+(meta.modo==='coop'?' pasillos':' puntos');row.append(total);$('podium-list').append(row);}
     const drawings=Object.entries(this.data.resultados).filter(([key])=>key.startsWith(`${meta.match}_`)).flatMap(([key,results])=>Object.entries(results).map(([uid,record])=>({uid,record,key}))).filter(item=>validImage(item.record.miniatura)).sort((a,b)=>b.record.precision-a.record.precision);
     const chosen=drawings.length>6?[...drawings.slice(0,3),...drawings.slice(-3)]:drawings;for(const item of chosen)$('gallery').append(this.resultCard(item.uid,item.record));
     if(this.savedMatch!==meta.match){this.savedMatch=meta.match;$('online-save-retry').hidden=true;this.saveScores(ranking);}
@@ -282,7 +283,7 @@ export class OnlineSession {
     let result;
     try {
       const awarded=await awardMatch({id,modo:meta.modo,dificultad:meta.dificultad,personalizada:meta.personalizada,pasillos,puntos:points,puesto:position,precisiones,encuentros,racha:meta.modo==='coop'?pasillos:maxRacha,margen3,tiempoMs:Math.max(0,Date.now()-match)});
-      if(awarded.nivel>awarded.nivelAnterior)this.onLevelUp?.(awarded.nivel);
+      showReward('online-reward',awarded);if(awarded.nivel>awarded.nivelAnterior)this.onLevelUp?.(awarded.nivel);
       result=await publishRecord({modo:meta.modo,dificultad:meta.dificultad,puntuacion:meta.modo==='race'?points:pasillos,personalizada:meta.personalizada,sala:this.net.code,partida:match});
     }catch{result={status:'pending',message:'No se pudo guardar. Reintenta.'};}
     this.savingScore=false;if(!this.active||this.data.meta.match!==match||this.data.meta.estado!=='podium')return;

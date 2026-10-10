@@ -1,0 +1,272 @@
+[
+  {
+    "id": "hierro",
+    "tipo": "marco",
+    "nombre": "Hierro Oxidado",
+    "rareza": "comun",
+    "precio": 100,
+    "archivo": "assets/ui/marcos/hierro.webp",
+    "requisito": null
+  },
+  {
+    "id": "huesos",
+    "tipo": "marco",
+    "nombre": "Huesos",
+    "rareza": "raro",
+    "precio": 250,
+    "archivo": "assets/ui/marcos/huesos.webp",
+    "requisito": null
+  },
+  {
+    "id": "raices",
+    "tipo": "marco",
+    "nombre": "Raíces",
+    "rareza": "raro",
+    "precio": 250,
+    "archivo": "assets/ui/marcos/raices.webp",
+    "requisito": null
+  },
+  {
+    "id": "cadenas",
+    "tipo": "marco",
+    "nombre": "Cadenas",
+    "rareza": "epico",
+    "precio": 600,
+    "archivo": "assets/ui/marcos/cadenas.webp",
+    "requisito": null
+  },
+  {
+    "id": "velas",
+    "tipo": "marco",
+    "nombre": "Velas Derretidas",
+    "rareza": "epico",
+    "precio": 600,
+    "archivo": "assets/ui/marcos/velas.webp",
+    "requisito": null
+  },
+  {
+    "id": "hilo",
+    "tipo": "marco",
+    "nombre": "Hilo y Agujas",
+    "rareza": "raro",
+    "precio": 250,
+    "archivo": "assets/ui/marcos/hilo.webp",
+    "requisito": null
+  },
+  {
+    "id": "dientes",
+    "tipo": "marco",
+    "nombre": "Dientes",
+    "rareza": "legendario",
+    "precio": 1500,
+    "archivo": "assets/ui/marcos/dientes.webp",
+    "requisito": null
+  },
+  {
+    "id": "sangre",
+    "tipo": "marco",
+    "nombre": "Sangre Seca",
+    "rareza": "legendario",
+    "precio": 0,
+    "archivo": "assets/ui/marcos/sangre.webp",
+    "requisito": {
+      "tipo": "logro",
+      "valor": "pesadilla10"
+    }
+  },
+  {
+    "id": "titulo-1",
+    "tipo": "titulo",
+    "nombre": "Superviviente",
+    "rareza": "comun",
+    "precio": 100,
+    "archivo": "",
+    "requisito": null
+  },
+  {
+    "id": "titulo-2",
+    "tipo": "titulo",
+    "nombre": "Cazador de Sombras",
+    "rareza": "raro",
+    "precio": 250,
+    "archivo": "",
+    "requisito": null
+  },
+  {
+    "id": "titulo-3",
+    "tipo": "titulo",
+    "nombre": "Devoralibros",
+    "rareza": "raro",
+    "precio": 0,
+    "archivo": "",
+    "requisito": {
+      "tipo": "logro",
+      "valor": "treinta"
+    }
+  },
+  {
+    "id": "titulo-4",
+    "tipo": "titulo",
+    "nombre": "Ojo de Lince",
+    "rareza": "epico",
+    "precio": 600,
+    "archivo": "",
+    "requisito": null
+  },
+  {
+    "id": "titulo-5",
+    "tipo": "titulo",
+    "nombre": "Insomne",
+    "rareza": "raro",
+    "precio": 250,
+    "archivo": "",
+    "requisito": null
+  },
+  {
+    "id": "titulo-6",
+    "tipo": "titulo",
+    "nombre": "Pesadilla Viviente",
+    "rareza": "legendario",
+    "precio": 0,
+    "archivo": "",
+    "requisito": {
+      "tipo": "logro",
+      "valor": "pesadilla10"
+    }
+  },
+  {
+    "id": "titulo-7",
+    "tipo": "titulo",
+    "nombre": "Veterano",
+    "rareza": "epico",
+    "precio": 0,
+    "archivo": "",
+    "requisito": {
+      "tipo": "nivel",
+      "valor": 10
+    }
+  },
+  {
+    "id": "titulo-8",
+    "tipo": "titulo",
+    "nombre": "Guardián",
+    "rareza": "raro",
+    "precio": 250,
+    "archivo": "",
+    "requisito": null
+  },
+  {
+    "id": "titulo-9",
+    "tipo": "titulo",
+    "nombre": "Errante",
+    "rareza": "comun",
+    "precio": 100,
+    "archivo": "",
+    "requisito": null
+  },
+  {
+    "id": "titulo-10",
+    "tipo": "titulo",
+    "nombre": "Vigía",
+    "rareza": "comun",
+    "precio": 100,
+    "archivo": "",
+    "requisito": null
+  },
+  {
+    "id": "titulo-11",
+    "tipo": "titulo",
+    "nombre": "Sin Descanso",
+    "rareza": "epico",
+    "precio": 600,
+    "archivo": "",
+    "requisito": null
+  },
+  {
+    "id": "titulo-12",
+    "tipo": "titulo",
+    "nombre": "Último Huésped",
+    "rareza": "legendario",
+    "precio": 0,
+    "archivo": "",
+    "requisito": {
+      "tipo": "nivel",
+      "valor": 20
+    }
+  },
+  {
+    "id": "hospital-perfil",
+    "tipo": "fondo",
+    "nombre": "Hospital Abandonado",
+    "rareza": "comun",
+    "precio": 100,
+    "archivo": "assets/ui/fondos/hospital-perfil.webp",
+    "requisito": null
+  },
+  {
+    "id": "mansion-perfil",
+    "tipo": "fondo",
+    "nombre": "Mansión",
+    "rareza": "raro",
+    "precio": 250,
+    "archivo": "assets/ui/fondos/mansion-perfil.webp",
+    "requisito": null
+  },
+  {
+    "id": "calderas",
+    "tipo": "fondo",
+    "nombre": "Sótano de Calderas",
+    "rareza": "raro",
+    "precio": 250,
+    "archivo": "assets/ui/fondos/calderas.webp",
+    "requisito": null
+  },
+  {
+    "id": "iglesia",
+    "tipo": "fondo",
+    "nombre": "Iglesia Derruida",
+    "rareza": "epico",
+    "precio": 600,
+    "archivo": "assets/ui/fondos/iglesia.webp",
+    "requisito": null
+  },
+  {
+    "id": "bosque",
+    "tipo": "fondo",
+    "nombre": "Bosque Muerto",
+    "rareza": "epico",
+    "precio": 600,
+    "archivo": "assets/ui/fondos/bosque.webp",
+    "requisito": null
+  },
+  {
+    "id": "faro",
+    "tipo": "fondo",
+    "nombre": "Faro Encallado",
+    "rareza": "legendario",
+    "precio": 1500,
+    "archivo": "assets/ui/fondos/faro.webp",
+    "requisito": null
+  },
+  {
+    "id": "biblioteca",
+    "tipo": "fondo",
+    "nombre": "Biblioteca Quemada",
+    "rareza": "legendario",
+    "precio": 0,
+    "archivo": "assets/ui/fondos/biblioteca.webp",
+    "requisito": {
+      "tipo": "logro",
+      "valor": "treinta"
+    }
+  },
+  {
+    "id": "metro",
+    "tipo": "fondo",
+    "nombre": "Metro Clausurado",
+    "rareza": "epico",
+    "precio": 600,
+    "archivo": "assets/ui/fondos/metro.webp",
+    "requisito": null
+  }
+]

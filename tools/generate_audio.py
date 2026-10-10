@@ -10,6 +10,7 @@ root = Path(__file__).resolve().parents[1]
 monsters = json.loads((root / 'monsters.json').read_text())
 rate = 22050
 profiles = {23: (71, 4.7, .55), 24: (735, 17, .12), 25: (183, 6, .7), 26: (267, 2.1, .22), 27: (103, 13, .6), 28: (418, 21, .35), 29: (351, 32, .48), 30: (57, 3.1, .28)}
+profiles.update({31:(98,2.4,.42),32:(527,19,.25),33:(138,4.3,.63),34:(684,37,.36),35:(46,7.8,.57),36:(873,11.3,.14),37:(224,1.6,.29),38:(339,5.2,.45)})
 
 def cue(identifier, kind):
     rng = random.Random(identifier * 7919 + (101 if kind == 'scream' else 7))
@@ -66,3 +67,20 @@ for monster in monsters:
             output.writeframes(cue(monster['id'], kind))
         temporary.replace(target)
 print(f'AUDIO OK: {len(monsters) * 2} WAV originales, PCM16 mono a {rate} Hz.')
+# Ambiente en bucle; frecuencias de ciclos enteros y bordes suaves, sin saturación.
+rng=random.Random(501)
+ambient=array.array('h')
+low=0
+for index in range(rate*8):
+    t=index/rate
+    low=low*.993+rng.uniform(-1,1)*.007
+    fade=math.sin(math.pi*t/8)**2
+    value=(math.sin(2*math.pi*41*t)*.08+math.sin(2*math.pi*61.75*t)*.035+low*.15)*fade
+    ambient.append(int(value*18000))
+if sys.byteorder!='little':
+    ambient.byteswap()
+with wave.open(str(root/'assets/audio/ambience.wav'),'wb') as output:
+    output.setnchannels(1)
+    output.setsampwidth(2)
+    output.setframerate(rate)
+    output.writeframes(ambient.tobytes())

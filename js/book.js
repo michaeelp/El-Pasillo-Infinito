@@ -1,16 +1,19 @@
-import { setPortrait } from './monsters.js?v=1.3.1';
-export class Book {
-  constructor(monsters,audio){this.monsters=monsters;this.audio=audio;this.index=0;this.turnTimer=0;
-    this.root=document.getElementById('book');this.marks=document.getElementById('bookmarks');
-    monsters.forEach((m,i)=>{const b=document.createElement('button'),img=document.createElement('img'),n=document.createElement('span');b.setAttribute('aria-label',m.nombre);b.title=m.nombre;setPortrait(img,m);n.textContent=String(m.id).padStart(2,'0');b.append(img,n);b.onclick=()=>this.go(i);this.marks.append(b);});
-    document.getElementById('prev-page').onclick=()=>this.go(this.index-1);document.getElementById('next-page').onclick=()=>this.go(this.index+1);this.render();
-  }
-  go(index,animate=true){if(this.turnTimer)return;this.index=(index+this.monsters.length)%this.monsters.length;
-    if(animate){this.audio.effect('page');this.root.classList.add('turning');this.render();this.turnTimer=setTimeout(()=>{this.root.classList.remove('turning');this.turnTimer=0;},430);}else this.render();
-  }
-  render(){const m=this.monsters[this.index];setPortrait(document.getElementById('book-portrait'),m);
-    for(const[id,value]of Object.entries({'book-name':m.nombre,'page-number':String(this.index+1),'page-count':`${this.index+1} / ${this.monsters.length}`}))document.getElementById(id).textContent=value;
-    document.getElementById('book-lore').textContent=m.lore;
-    [...this.marks.children].forEach((b,i)=>b.setAttribute('aria-current',String(i===this.index)));
-  }
+import {setPortrait} from './monsters.js?v=1.4.0';
+import {getSettings} from './settings.js?v=1.4.0';
+// Índice dentro de las dos páginas; marcas locales a cada pasillo.
+export class Book{
+ constructor(monsters,audio){this.monsters=monsters;this.audio=audio;this.index=0;this.focused=0;this.turnTimer=0;this.discarded=new Set();this.root=document.getElementById('book');this.marks=document.getElementById('bookmarks');this.cells=[];this.indexView=true;
+ monsters.forEach((m,i)=>{const b=document.createElement('button'),img=document.createElement('img');b.type='button';b.setAttribute('aria-label',m.nombre);b.title=m.nombre;b.dataset.monster=m.id;b.setAttribute('role','gridcell');setPortrait(img,m);b.append(img);b.onclick=()=>{if(b.suppress){b.suppress=false;return;}this.focused=i;this.go(i);};b.oncontextmenu=e=>{e.preventDefault();this.toggle(i);};let press;
+ b.onpointerdown=e=>{if(e.pointerType==='mouse')return;press=setTimeout(()=>{b.suppress=true;this.toggle(i);},550);};for(const type of ['pointerup','pointercancel','pointerleave','pointermove'])b.addEventListener(type,()=>clearTimeout(press));b.onfocus=()=>{this.focused=i;this.roving();};this.cells.push(b);this.marks.append(b);});
+ this.marks.setAttribute('role','grid');document.getElementById('prev-page').onclick=()=>this.go(this.index-1);document.getElementById('next-page').onclick=()=>this.go(this.index+1);document.getElementById('book-index').onclick=()=>this.showIndex();
+ this.root.addEventListener('keydown',e=>{if(this.handleKey(e)){e.preventDefault();e.stopPropagation();}});window.addEventListener('resize',()=>this.columns());document.addEventListener('pasillo-settings',()=>this.columns());this.render();this.showIndex(false);
+ }
+ columns(){this.columnCount=Math.max(4,Math.min(getSettings().bookColumns,Math.floor((this.root.clientWidth||innerWidth-40)/88)));this.marks.style.setProperty('--book-columns',this.columnCount);return this.columnCount;}
+ roving(){this.cells.forEach((b,i)=>b.tabIndex=i===this.focused?0:-1);}
+ toggle(i){this.discarded.has(i)?this.discarded.delete(i):this.discarded.add(i);const b=this.cells[i];b.classList.toggle('discarded',this.discarded.has(i));b.setAttribute('aria-label',this.monsters[i].nombre+(this.discarded.has(i)?' · Descartado':''));}
+ reset(){this.discarded.clear();this.cells.forEach((b,i)=>{b.classList.remove('discarded');b.setAttribute('aria-label',this.monsters[i].nombre);});this.showIndex(false);}
+ showIndex(focus=true){this.indexView=true;this.root.classList.add('show-index');this.columns();this.roving();document.getElementById('page-count').textContent='';if(focus)this.cells[this.focused]?.focus({preventScroll:true});}
+ go(index,animate=true){if(this.turnTimer)return;this.index=(index+this.monsters.length)%this.monsters.length;this.focused=this.index;this.indexView=false;this.root.classList.remove('show-index');this.render();if(animate){this.audio.effect('page');this.root.classList.add('turning');this.turnTimer=setTimeout(()=>{this.root.classList.remove('turning');this.turnTimer=0;},430);}}
+ handleKey(e){if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return false;if(e.key==='Escape'&&!this.indexView){this.showIndex();return true;}if(this.indexView){const steps={ArrowLeft:-1,ArrowRight:1,ArrowUp:-this.columns(),ArrowDown:this.columns()};if(e.key in steps){this.focused=Math.max(0,Math.min(this.monsters.length-1,this.focused+steps[e.key]));this.roving();this.cells[this.focused].focus();return true;}if(e.key==='Enter'){this.go(this.focused);return true;}}else if(['ArrowLeft','ArrowRight'].includes(e.key)){this.go(this.index+(e.key==='ArrowLeft'?-1:1));return true;}return false;}
+ render(){const m=this.monsters[this.index];setPortrait(document.getElementById('book-portrait'),m);for(const[id,value]of Object.entries({'book-name':m.nombre,'page-number':String(this.index+1),'page-count':`${this.index+1} / ${this.monsters.length}`}))document.getElementById(id).textContent=value;document.getElementById('book-lore').textContent=m.lore;this.roving();}
 }
